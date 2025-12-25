@@ -1,32 +1,11 @@
-//
-//  ChiffreApp.swift
-//  Chiffre
-//
-//  Created by zachmacmini on 2025/12/25.
-//
-
 import SwiftUI
-import SwiftData
 
 @main
 struct ChiffreApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ChiffreHomeView()
+                .preferredColorScheme(.light) // 强制浅色模式以适配梦幻风格
         }
-        .modelContainer(sharedModelContainer)
     }
 }
