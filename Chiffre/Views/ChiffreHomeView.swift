@@ -18,17 +18,29 @@ struct ChiffreHomeView: View {
                 
                 Spacer()
                 
-                // 3. 核心卡片 (悬浮玻璃底座)
+                // 3. 核心卡片 (悬浮玻璃底座 - 已修复圆角背景 Bug)
                 ZStack {
                     // 底座背景
                     RoundedRectangle(cornerRadius: 40)
-                        .fill(.ultraThinMaterial)
-                        .background(Color.white.opacity(0.2))
+                        .fill(.ultraThinMaterial) // 磨砂材质
+                        .background(
+                            RoundedRectangle(cornerRadius: 40) // 关键修复：背景层必须也是圆角，防止出现幽灵矩形
+                                .fill(Color.white.opacity(0.25))
+                        )
                         .frame(width: 300, height: 300)
-                        .shadow(color: SurrealTheme.colors.deepIndigo.opacity(0.1), radius: 30, y: 15)
+                        // 优化阴影：双层阴影打造立体感
+                        .shadow(color: SurrealTheme.colors.deepIndigo.opacity(0.15), radius: 25, y: 12) // 深色投影
+                        .shadow(color: Color.white.opacity(0.6), radius: 10, x: -4, y: -4) // 顶部高光
                         .overlay(
                             RoundedRectangle(cornerRadius: 40)
-                                .stroke(LinearGradient(colors: [.white.opacity(0.8), .white.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [.white.opacity(0.8), .white.opacity(0.1)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.5
+                                )
                         )
                     
                     // 内容区域
@@ -56,7 +68,6 @@ struct ChiffreHomeView: View {
                             
                     } else {
                         // --- 隐藏状态 ---
-                        // 修改点：不再使用 trainer.mode.icon，而是强制使用耳朵图标
                         Image(systemName: "ear.and.waveform")
                             .font(.system(size: 80))
                             .foregroundStyle(SurrealTheme.colors.coral.opacity(0.8))

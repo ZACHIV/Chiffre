@@ -33,8 +33,9 @@ class NumberTrainer: ObservableObject {
     @AppStorage("maxRange") var maxRange: Int = 100 // 仅用于数字模式
     
     init() {
-        // 初始不发声
-    }
+            // 修复点 2: 不再显示 "Prêt"，初始化直接生成题目
+            generateNew(speakNow: false)
+        }
     
     func generateNew(speakNow: Bool = true) {
         withAnimation(.spring()) {
