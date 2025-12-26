@@ -1,11 +1,3 @@
-//
-//  SettingsSheet.swift
-//  Chiffre
-//
-//  Created by zachmacmini on 2025/12/25.
-//
-
-
 import SwiftUI
 
 struct SettingsSheet: View {
@@ -14,71 +6,144 @@ struct SettingsSheet: View {
     
     var body: some View {
         ZStack {
-            Color(red: 0.99, green: 0.98, blue: 0.97).ignoresSafeArea() // 米色纸张背景
+            // 背景色保持之前的米色或白色
+            Color(red: 0.99, green: 0.98, blue: 0.97).ignoresSafeArea()
             
-            VStack(spacing: 30) {
-                // 把手
-                Capsule()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(width: 40, height: 5)
-                    .padding(.top, 15)
+            VStack(spacing: 24) {
+                // 顶部抓手
+                Capsule().fill(Color.gray.opacity(0.2)).frame(width: 40, height: 5).padding(.top, 15)
                 
-                Text("Difficulté")
+                Text("Réglages (设置)")
                     .font(SurrealTheme.Typography.header(24))
                     .foregroundStyle(SurrealTheme.colors.deepIndigo)
                 
-                VStack(spacing: 15) {
-                    HStack {
-                        Text("Portée (范围): 0 - \(trainer.maxRange)")
-                            .font(SurrealTheme.Typography.body(18))
-                            .foregroundStyle(SurrealTheme.colors.deepIndigo)
-                            .monospacedDigit()
-                        Spacer()
-                    }
+                // MARK: - 1. 模式选择 (横向滚动胶囊)
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Mode (模式)")
+                        .font(SurrealTheme.Typography.header(16))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 30)
                     
-                    Slider(value: Binding(
-                        get: { Double(trainer.maxRange) },
-                        set: { trainer.maxRange = Int($0) }
-                    ), in: 10...9999, step: 10)
-                    .tint(SurrealTheme.colors.coral)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(GameMode.allCases) { mode in
+                                ModeCapsule(mode: mode, isSelected: trainer.mode == mode) {
+                                    trainer.mode = mode
+                                    trainer.generateNew(speakNow: false)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 30)
+                    }
                 }
-                .padding(.horizontal, 30)
                 
-                // 快速预设
-                HStack(spacing: 12) {
-                    PresetButton(label: "简单 (10)", value: 10, trainer: trainer)
-                    PresetButton(label: "中等 (100)", value: 100, trainer: trainer)
-                    PresetButton(label: "困难 (1000)", value: 1000, trainer: trainer)
+                Divider().padding(.horizontal, 30)
+                
+                // MARK: - 2. 动态内容区
+                // 只有在数字模式下，才显示范围调节
+                if trainer.mode == .number {
+                    VStack(spacing: 20) {
+                        VStack(spacing: 10) {
+                            HStack {
+                                Text("范围: 0 - \(trainer.maxRange)")
+                                    .font(SurrealTheme.Typography.body(18))
+                                    .monospacedDigit()
+                                Spacer()
+                            }
+                            
+                            Slider(value: Binding(
+                                get: { Double(trainer.maxRange) },
+                                set: { trainer.maxRange = Int($0) }
+                            ), in: 10...9999, step: 10)
+                            .tint(SurrealTheme.colors.coral)
+                        }
+                        
+                        // 预设按钮 (恢复了！)
+                        HStack(spacing: 12) {
+                            PresetButton(label: "简单 (10)", value: 10, trainer: trainer)
+                            PresetButton(label: "中等 (100)", value: 100, trainer: trainer)
+                            PresetButton(label: "困难 (1000)", value: 1000, trainer: trainer)
+                        }
+                    }
+                    .padding(.horizontal, 30)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else {
+                    // 其他模式的提示文案
+                    ContentUnavailableView {
+                        Image(systemName: trainer.mode.icon)
+                            .font(.largeTitle)
+                            .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.5))
+                    } description: {
+                        Text(getModeDescription(for: trainer.mode))
+                            .font(SurrealTheme.Typography.body(16))
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(height: 150)
                 }
-                .padding(.horizontal, 30)
                 
                 Spacer()
             }
+            .animation(.spring(), value: trainer.mode)
+        }
+    }
+    
+    func getModeDescription(for mode: GameMode) -> String {
+        switch mode {
+        case .phoneNumber: return "生成随机的法国手机号格式\n(06/07 开头)"
+        case .price: return "练习含小数点的价格表达\n(如 12,50 €)"
+        case .time: return "练习 24 小时制时间表达\n(如 14h30)"
+        case .year: return "练习历史年份或近期年份\n(1950 - 2030)"
+        default: return ""
         }
     }
 }
 
+// 辅助组件：模式选择胶囊
+struct ModeCapsule: View {
+    let mode: GameMode
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: mode.icon)
+                Text(mode.rawValue)
+                    .font(.caption).bold()
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 16)
+            .background(isSelected ? SurrealTheme.colors.deepIndigo : Color.black.opacity(0.05))
+            .foregroundStyle(isSelected ? .white : SurrealTheme.colors.deepIndigo)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule().strokeBorder(SurrealTheme.colors.deepIndigo.opacity(0.1), lineWidth: 1)
+            )
+        }
+    }
+}
+
+// 辅助组件：预设按钮 (保持之前的逻辑)
 struct PresetButton: View {
     let label: String
     let value: Int
     @ObservedObject var trainer: NumberTrainer
     
-    var isSelected: Bool {
-        trainer.maxRange == value
-    }
+    var isSelected: Bool { trainer.maxRange == value }
     
     var body: some View {
         Button {
             trainer.maxRange = value
-            trainer.generateNew(speakNow: false) // 切换难度后重置
+            trainer.generateNew(speakNow: false)
         } label: {
             Text(label)
                 .font(.caption).bold()
-                .padding(.vertical, 10)
+                .padding(.vertical, 12)
                 .frame(maxWidth: .infinity)
-                .background(isSelected ? SurrealTheme.colors.deepIndigo : Color.black.opacity(0.05))
+                .background(isSelected ? SurrealTheme.colors.coral : Color.white)
                 .foregroundStyle(isSelected ? .white : SurrealTheme.colors.deepIndigo)
-                .clipShape(Capsule())
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: Color.black.opacity(0.05), radius: 2, y: 1)
         }
     }
 }

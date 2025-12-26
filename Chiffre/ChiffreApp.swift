@@ -4,8 +4,8 @@ import SwiftUI
 struct ChiffreApp: App {
     var body: some Scene {
         WindowGroup {
-            ChiffreHomeView()
-                .preferredColorScheme(.light) // 强制浅色模式以适配梦幻风格
+            ContentView() // 替换原来的 ChiffreHomeView()
+                .preferredColorScheme(.light)
         }
     }
 }

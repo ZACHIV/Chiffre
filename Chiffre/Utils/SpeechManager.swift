@@ -1,11 +1,3 @@
-//
-//  SpeechManager.swift
-//  Chiffre
-//
-//  Created by zachmacmini on 2025/12/25.
-//
-
-
 import AVFoundation
 
 class SpeechManager: NSObject {
@@ -14,25 +6,29 @@ class SpeechManager: NSObject {
     
     private override init() {
         super.init()
-        // 配置音频会话，确保静音模式下也能播放
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: .duckOthers)
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            print("Audio session setup failed: \(error)")
-        }
+        // 初始化时不强制占用，等到真正播放时再设置
     }
     
-    func speak(_ number: Int) {
-        // 防止重叠播放
+    func speak(_ text: String) {
+        // 1. 如果正在发声，先停止
         if synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
         }
         
-        let utterance = AVSpeechUtterance(string: "\(number)")
-        // 关键：指定法语
+        // 2.【关键修复】每次播放前，强制设置 AudioSession 为播放模式
+        // 这会打断 SpeechRecognizer 的录音状态，防止冲突
+        let audioSession = AVAudioSession.sharedInstance()
+        do {
+            try audioSession.setCategory(.playback, mode: .spokenAudio, options: .duckOthers)
+            try audioSession.setActive(true)
+        } catch {
+            print("Audio session error: \(error)")
+        }
+        
+        // 3. 配置发音
+        let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: "fr-FR")
-        utterance.rate = 0.45 // 稍慢语速，适合听力训练
+        utterance.rate = 0.42
         utterance.volume = 1.0
         
         synthesizer.speak(utterance)

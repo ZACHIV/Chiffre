@@ -1,11 +1,3 @@
-//
-//  ChiffreHomeView.swift
-//  Chiffre
-//
-//  Created by zachmacmini on 2025/12/25.
-//
-
-
 import SwiftUI
 
 struct ChiffreHomeView: View {
@@ -14,11 +6,11 @@ struct ChiffreHomeView: View {
     
     var body: some View {
         ZStack {
-            // 1. 背景
+            // 1. 全局背景
             SurrealTheme.mainBackground
             
             VStack(spacing: 0) {
-                // 2. 标题
+                // 2. 顶部标题
                 Text("Chiffre")
                     .font(SurrealTheme.Typography.title(48))
                     .foregroundStyle(SurrealTheme.colors.deepIndigo)
@@ -26,37 +18,56 @@ struct ChiffreHomeView: View {
                 
                 Spacer()
                 
-                // 3. 核心卡片 (悬浮玻璃)
+                // 3. 核心卡片 (悬浮玻璃底座)
                 ZStack {
-                    // 底座
+                    // 底座背景
                     RoundedRectangle(cornerRadius: 40)
                         .fill(.ultraThinMaterial)
                         .background(Color.white.opacity(0.2))
-                        .frame(width: 280, height: 280)
+                        .frame(width: 300, height: 300)
                         .shadow(color: SurrealTheme.colors.deepIndigo.opacity(0.1), radius: 30, y: 15)
                         .overlay(
                             RoundedRectangle(cornerRadius: 40)
                                 .stroke(LinearGradient(colors: [.white.opacity(0.8), .white.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
                         )
                     
-                    // 内容
+                    // 内容区域
                     if trainer.isRevealed {
-                        Text("\(trainer.currentNumber)")
-                            .font(SurrealTheme.Typography.number(96))
+                        // --- 揭晓状态 ---
+                        let text = trainer.currentDisplay
+                        let isLongText = text.count > 10
+                        
+                        Text(text)
+                            .font(getFont(for: text))
                             .foregroundStyle(SurrealTheme.colors.deepIndigo)
+                            .multilineTextAlignment(.center)
                             .transition(.scale.combined(with: .opacity))
+                            .minimumScaleFactor(0.4)
+                            .lineLimit(1)
+                            // 长文本优化：胶囊背景
+                            .padding(.vertical, isLongText ? 12 : 0)
+                            .padding(.horizontal, isLongText ? 24 : 0)
+                            .background(
+                                Capsule()
+                                    .fill(Color.white.opacity(isLongText ? 0.5 : 0))
+                                    .shadow(color: SurrealTheme.colors.deepIndigo.opacity(isLongText ? 0.05 : 0), radius: 5, y: 2)
+                            )
+                            .padding(.horizontal, 20)
+                            
                     } else {
+                        // --- 隐藏状态 ---
+                        // 修改点：不再使用 trainer.mode.icon，而是强制使用耳朵图标
                         Image(systemName: "ear.and.waveform")
                             .font(.system(size: 80))
                             .foregroundStyle(SurrealTheme.colors.coral.opacity(0.8))
                             .transition(.scale.combined(with: .opacity))
                             .onTapGesture {
-                                trainer.replay() // 点击图标重听
+                                trainer.replay()
                             }
                     }
                 }
                 .onTapGesture {
-                    // 点击卡片区域：如果在隐藏状态，则重听
+                    // 点击卡片任意区域：如果未揭晓则重听
                     if !trainer.isRevealed { trainer.replay() }
                 }
                 
@@ -70,12 +81,11 @@ struct ChiffreHomeView: View {
                 
                 // 4. 底部控制栏
                 HStack(spacing: 30) {
-                    // 重听按钮
                     CircleButton(icon: "speaker.wave.2.fill") {
                         trainer.replay()
                     }
                     
-                    // 主操作按钮 (揭晓/下一个)
+                    // 核心操作按钮
                     Button {
                         if trainer.isRevealed {
                             trainer.generateNew()
@@ -92,7 +102,6 @@ struct ChiffreHomeView: View {
                             .shadow(color: (trainer.isRevealed ? SurrealTheme.colors.deepIndigo : SurrealTheme.colors.coral).opacity(0.4), radius: 10, y: 5)
                     }
                     
-                    // 设置按钮
                     CircleButton(icon: "slider.horizontal.3") {
                         showSettings = true
                     }
@@ -102,13 +111,24 @@ struct ChiffreHomeView: View {
         }
         .sheet(isPresented: $showSettings) {
             SettingsSheet(trainer: trainer)
-                .presentationDetents([.height(350)])
+                .presentationDetents([.height(400)])
                 .presentationCornerRadius(30)
+        }
+    }
+    
+    // 动态字体大小
+    func getFont(for text: String) -> Font {
+        if text.count > 10 {
+            return SurrealTheme.Typography.number(42) // 电话号码
+        } else if text.count > 5 {
+            return SurrealTheme.Typography.number(64) // 时间/短价格
+        } else {
+            return SurrealTheme.Typography.number(96) // 普通数字
         }
     }
 }
 
-// 辅助组件：圆形按钮
+// 辅助组件
 struct CircleButton: View {
     let icon: String
     let action: () -> Void

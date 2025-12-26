@@ -1,32 +1,93 @@
 import SwiftUI
-import Combine // <--- 关键！必须添加这一行
+import Combine
+
+// 1. 定义扩展后的游戏模式
+enum GameMode: String, CaseIterable, Identifiable {
+    case number = "Chiffres (数字)"
+    case phoneNumber = "Tél (电话)"
+    case price = "Prix (价格)"
+    case time = "Heure (时间)"
+    case year = "Année (年份)"
+    
+    var id: String { self.rawValue }
+    
+    // 对应图标，用于 UI 展示
+    var icon: String {
+        switch self {
+        case .number: return "number"
+        case .phoneNumber: return "phone.fill"
+        case .price: return "eurosign.circle.fill"
+        case .time: return "clock.fill"
+        case .year: return "calendar"
+        }
+    }
+}
 
 class NumberTrainer: ObservableObject {
-    // 当前数字
-    @Published var currentNumber: Int = 0
-    // 是否显示答案
+    @Published var currentDisplay: String = "Prêt"
+    private var speakableContent: String = "" // 专门用于朗读的字符串
+    
     @Published var isRevealed: Bool = false
     
-    // 难度设置 (持久化存储) - @AppStorage 是 SwiftUI 的，所以 import SwiftUI 也要保留
-    @AppStorage("maxRange") var maxRange: Int = 100
+    @AppStorage("gameMode") var mode: GameMode = .number
+    @AppStorage("maxRange") var maxRange: Int = 100 // 仅用于数字模式
     
     init() {
-        // 初始化时生成第一个数字但不自动播放
-        generateNew(speakNow: false)
+        // 初始不发声
     }
     
-    // 生成新数字
     func generateNew(speakNow: Bool = true) {
-        let minRange = 0
-        var newNum = 0
-        // 简单的防重复
-        repeat {
-            newNum = Int.random(in: minRange...maxRange)
-        } while newNum == currentNumber && maxRange > minRange
-        
         withAnimation(.spring()) {
-            currentNumber = newNum
             isRevealed = false
+            
+            switch mode {
+            case .number:
+                let num = Int.random(in: 0...maxRange)
+                currentDisplay = "\(num)"
+                speakableContent = "\(num)"
+                
+            case .phoneNumber:
+                // 电话：06 12 34 56 78
+                let prefix = Bool.random() ? "06" : "07"
+                let p1 = String(format: "%02d", Int.random(in: 0...99))
+                let p2 = String(format: "%02d", Int.random(in: 0...99))
+                let p3 = String(format: "%02d", Int.random(in: 0...99))
+                let p4 = String(format: "%02d", Int.random(in: 0...99))
+                
+                currentDisplay = "\(prefix) \(p1) \(p2) \(p3) \(p4)"
+                // 语音：加逗号制造停顿
+                speakableContent = "\(prefix), \(p1), \(p2), \(p3), \(p4)"
+                
+            case .price:
+                // 价格：12,50 €
+                let euro = Int.random(in: 1...100)
+                let cent = Int.random(in: 0...99)
+                // 法语习惯用逗号做小数点
+                currentDisplay = String(format: "%d,%02d €", euro, cent)
+                // 语音：TTS 能够识别 "euros"，但最好明确写出格式
+                // 比如 "12 euros 50"
+                speakableContent = "\(euro) euros \(cent)"
+                
+            case .time:
+                // 时间：14h30
+                let hour = Int.random(in: 0...23)
+                let minute = Int.random(in: 0...59)
+                currentDisplay = String(format: "%02dh%02d", hour, minute)
+                
+                if minute == 0 {
+                    speakableContent = "\(hour) heures pile" // 整点
+                } else if minute == 30 {
+                    speakableContent = "\(hour) heures et demie" // 半点
+                } else {
+                    speakableContent = "\(hour) heures \(minute)"
+                }
+                
+            case .year:
+                // 年份：1950 - 2030
+                let year = Int.random(in: 1950...2030)
+                currentDisplay = "\(year)"
+                speakableContent = "\(year)"
+            }
         }
         
         if speakNow {
@@ -34,12 +95,10 @@ class NumberTrainer: ObservableObject {
         }
     }
     
-    // 播放发音
     func replay() {
-        SpeechManager.shared.speak(currentNumber)
+        SpeechManager.shared.speak(speakableContent)
     }
     
-    // 揭晓答案
     func reveal() {
         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
             isRevealed = true

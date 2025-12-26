@@ -29,9 +29,22 @@
 		3A4A75992EFD830E00E6C0D9 /* ChiffreUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChiffreUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		3AA8CCED2EFEB00B006AAC3D /* Exceptions for "Chiffre" folder in "Chiffre" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 3A4A757F2EFD830D00E6C0D9 /* Chiffre */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3A4A75822EFD830D00E6C0D9 /* Chiffre */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3AA8CCED2EFEB00B006AAC3D /* Exceptions for "Chiffre" folder in "Chiffre" target */,
+			);
 			path = Chiffre;
 			sourceTree = "<group>";
 		};
@@ -400,6 +413,9 @@
 				DEVELOPMENT_TEAM = NBGZXN8GX7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Chiffre/Info.plist;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要使用麦克风来听取您的发音。";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "需要您的许可来验证法语发音是否准确。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -432,6 +448,9 @@
 				DEVELOPMENT_TEAM = NBGZXN8GX7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Chiffre/Info.plist;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要使用麦克风来听取您的发音。";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "需要您的许可来验证法语发音是否准确。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
