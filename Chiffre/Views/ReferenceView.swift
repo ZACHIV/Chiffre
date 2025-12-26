@@ -1,23 +1,28 @@
 import SwiftUI
 
 struct ReferenceView: View {
-    // 定义数据结构：分组
+    // 数据结构
     struct NumberGroup: Identifiable {
         let id = UUID()
-        let title: String
+        let frenchTitle: String
+        let cnSubtitle: String
         let numbers: [Int]
     }
     
-    // 修改点：补全了 70-79 和 90-99 的完整序列
     let groups: [NumberGroup] = [
-        NumberGroup(title: "Les Bases (基础)", numbers: Array(1...20)),
-        NumberGroup(title: "Les Dizaines (整十)", numbers: [30, 40, 50, 60]),
-        NumberGroup(title: "Les Complexes (进阶)", numbers: Array(70...79) + [80] + Array(90...99))
+        NumberGroup(frenchTitle: "Les Bases", cnSubtitle: "基础数字 1-20", numbers: Array(1...20)),
+        NumberGroup(frenchTitle: "Les Dizaines", cnSubtitle: "整十进位", numbers: [30, 40, 50, 60]),
+        // 修改点：在末尾追加了 100, 1000, 和代表无限的 -1
+        NumberGroup(
+            frenchTitle: "Les Complexes",
+            cnSubtitle: "进位 · 大数 · 无限",
+            numbers: Array(70...79) + [80] + Array(90...99) + [100, 1000, -1]
+        )
     ]
     
-    // 网格布局配置
+    // 布局优化：4列布局
     let columns = [
-        GridItem(.adaptive(minimum: 64, maximum: 80), spacing: 16)
+        GridItem(.adaptive(minimum: 75, maximum: 100), spacing: 20)
     ]
     
     var body: some View {
@@ -28,111 +33,101 @@ struct ReferenceView: View {
             VStack(spacing: 0) {
                 // 顶部标题
                 Text("Référence")
-                    .font(SurrealTheme.Typography.header(24))
+                    .font(.custom("Didot", size: 42))
                     .foregroundStyle(SurrealTheme.colors.deepIndigo)
                     .padding(.top, 60)
-                    .padding(.bottom, 20)
+                    .padding(.bottom, 10)
                 
                 // 2. 滚动内容区
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 30) {
+                    VStack(spacing: 50) {
                         ForEach(groups) { group in
-                            VStack(alignment: .leading, spacing: 12) {
-                                // 分组标题
-                                Text(group.title)
-                                    .font(SurrealTheme.Typography.header(18))
-                                    .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.6))
-                                    .padding(.leading, 10)
-                                
-                                // 分组内容的玻璃容器
-                                GlassContainer {
-                                    LazyVGrid(columns: columns, spacing: 16) {
-                                        ForEach(group.numbers, id: \.self) { num in
-                                            NumberCell(number: num)
-                                        }
-                                    }
-                                    .padding(20)
+                            VStack(alignment: .leading, spacing: 20) {
+                                // 标题排版
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(group.frenchTitle)
+                                        .font(.custom("Didot", size: 32))
+                                        .foregroundStyle(SurrealTheme.colors.deepIndigo)
+                                    
+                                    Text(group.cnSubtitle)
+                                        .font(.system(size: 10, weight: .regular))
+                                        .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.4))
+                                        .tracking(1)
                                 }
+                                .padding(.leading, 20)
+                                
+                                // 数字网格
+                                LazyVGrid(columns: columns, spacing: 30) {
+                                    ForEach(group.numbers, id: \.self) { num in
+                                        BorderlessNumberCell(number: num)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
                             }
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 100) // 底部留白给 TabBar
+                    .padding(.top, 20)
+                    .padding(.bottom, 120)
                 }
             }
         }
     }
 }
 
-// --- 辅助组件：独立的数字单元格 ---
-struct NumberCell: View {
+// --- 无边界数字单元格 ---
+struct BorderlessNumberCell: View {
     let number: Int
     @State private var isPressed = false
+    
+    // 逻辑判断：是否是特殊字符（无限）
+    var isInfinity: Bool { number == -1 }
     
     var body: some View {
         Button {
             // 1. 发音逻辑
-            // 将 Int 转为法语拼写字符串 (如 71 -> "soixante et onze")
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .spellOut
-            formatter.locale = Locale(identifier: "fr-FR")
-            let text = formatter.string(from: NSNumber(value: number)) ?? "\(number)"
+            if isInfinity {
+                // 特殊发音
+                SpeechManager.shared.speak("L'infini")
+            } else {
+                // 常规数字发音
+                let formatter = NumberFormatter()
+                formatter.numberStyle = .spellOut
+                formatter.locale = Locale(identifier: "fr-FR")
+                let text = formatter.string(from: NSNumber(value: number)) ?? "\(number)"
+                SpeechManager.shared.speak(text)
+            }
             
-            SpeechManager.shared.speak(text)
-            
-            // 2. 触感反馈
+            // 2. 触感
             let generator = UIImpactFeedbackGenerator(style: .light)
             generator.impactOccurred()
             
-            // 3. 弹跳动画
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                isPressed = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // 3. 动画
+            withAnimation(.spring(duration: 0.3)) { isPressed = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 withAnimation { isPressed = false }
             }
             
         } label: {
             ZStack {
-                // 按钮背景
+                // 交互反馈层
                 Circle()
-                    .fill(Color.white.opacity(isPressed ? 0.6 : 0.3))
-                    .shadow(color: SurrealTheme.colors.deepIndigo.opacity(0.1), radius: 5, y: 3)
+                    .fill(SurrealTheme.colors.coral.opacity(0.15))
+                    .scaleEffect(isPressed ? 1.0 : 0.5)
+                    .opacity(isPressed ? 1.0 : 0.0)
+                    .frame(width: 70, height: 70)
                 
-                // 数字文本
-                Text("\(number)")
-                    .font(SurrealTheme.Typography.number(24))
+                // 数字/符号显示层
+                Text(isInfinity ? "∞" : "\(number)")
+                    // 针对 1000 和 ∞ 稍微调整一下字号，保持视觉平衡
+                    .font(.custom("Didot", size: isInfinity ? 40 : (number >= 1000 ? 28 : 34)))
                     .foregroundStyle(isPressed ? SurrealTheme.colors.coral : SurrealTheme.colors.deepIndigo)
-                    .scaleEffect(isPressed ? 1.2 : 1.0)
+                    // 无限符号微调位置，让它视觉居中
+                    .offset(y: isInfinity ? -2 : 0)
+                    .scaleEffect(isPressed ? 0.95 : 1.0)
             }
-            .frame(height: 64)
+            .frame(height: 70)
+            .contentShape(Circle())
         }
-    }
-}
-
-// --- 辅助组件：玻璃容器 ---
-struct GlassContainer<Content: View>: View {
-    let content: Content
-    
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-    
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 30)
-                .fill(.ultraThinMaterial)
-                .background(
-                    RoundedRectangle(cornerRadius: 30)
-                        .fill(Color.white.opacity(0.25))
-                )
-                .shadow(color: SurrealTheme.colors.deepIndigo.opacity(0.05), radius: 15, y: 10)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 30)
-                        .stroke(Color.white.opacity(0.5), lineWidth: 1)
-                )
-            
-            content
-        }
+        .buttonStyle(.plain)
     }
 }

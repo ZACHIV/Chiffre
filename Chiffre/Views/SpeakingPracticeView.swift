@@ -16,7 +16,7 @@ struct SpeakingPracticeView: View {
                 
                 Spacer()
                 
-                // --- 核心卡片 (保持正方形，完全静止) ---
+                // --- 2. 核心卡片 ---
                 ZStack {
                     // 背景层
                     RoundedRectangle(cornerRadius: 40)
@@ -35,7 +35,7 @@ struct SpeakingPracticeView: View {
                     
                     VStack(spacing: 0) {
                         
-                        // A. 数字区域 (已移除所有 scaleEffect 动画)
+                        // A. 数字区域
                         VStack(spacing: 8) {
                             Text("\(trainer.currentNumber)")
                                 .font(SurrealTheme.Typography.number(110))
@@ -50,12 +50,10 @@ struct SpeakingPracticeView: View {
                             .font(.caption)
                             .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.4))
                         }
-                        // [已删除] .scaleEffect(...) 和 .animation(...)
-                        // 现在的 UI 是完全静止的
                         .onTapGesture {
                             trainer.speakTarget()
                         }
-                        .frame(height: 180) // 固定高度
+                        .frame(height: 180)
                         
                         // B. 动态反馈区域
                         VStack(spacing: 8) {
@@ -147,22 +145,10 @@ struct SpeakingPracticeView: View {
                         .id("statusLabel")
                     
                     HStack(spacing: 40) {
-                        // Passer 按钮
-                        Button {
-                            withAnimation { trainer.generateNew() }
-                        } label: {
-                            VStack(spacing: 4) {
-                                Image(systemName: "arrow.right")
-                                    .font(.system(size: 24, weight: .light))
-                                Text("Passer")
-                                    .font(.system(size: 12, weight: .medium))
-                            }
-                            .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.4))
-                            .frame(width: 60, height: 60)
-                            .contentShape(Rectangle())
-                        }
+                        // 1. 左侧占位符 (透明) - 为了布局平衡
+                        Color.clear.frame(width: 60, height: 60)
                         
-                        // 录音主按钮
+                        // 2. 录音主按钮 (居中)
                         Button {
                             withAnimation {
                                 if trainer.status == .correct {
@@ -185,9 +171,22 @@ struct SpeakingPracticeView: View {
                             }
                         }
                         
-                        Color.clear.frame(width: 60, height: 60)
+                        // 3. 右侧 Passer 按钮 (方便单手操作)
+                        Button {
+                            withAnimation { trainer.generateNew() }
+                        } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: 24, weight: .light))
+                                Text("Passer")
+                                    .font(.system(size: 12, weight: .medium))
+                            }
+                            .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.4))
+                            .frame(width: 60, height: 60)
+                            .contentShape(Rectangle())
+                        }
                     }
-                    .offset(x: -10)
+                    .offset(x: 10) // 视觉微调：稍微向右偏移，保证中间的圆视觉居中
                 }
                 .padding(.bottom, 40)
             }
