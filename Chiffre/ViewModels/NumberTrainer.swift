@@ -8,6 +8,9 @@ enum GameMode: String, CaseIterable, Identifiable {
     case price = "Prix (价格)"
     case time = "Heure (时间)"
     case year = "Année (年份)"
+    case month = "Mois (月份)"
+    case trainNumber = "Train (火车号)"
+    case flightNumber = "Vol (航班号)"
     
     var id: String { self.rawValue }
     
@@ -19,6 +22,9 @@ enum GameMode: String, CaseIterable, Identifiable {
         case .price: return "eurosign.circle.fill"
         case .time: return "clock.fill"
         case .year: return "calendar"
+        case .month: return "calendar.circle.fill"
+        case .trainNumber: return "tram.fill"
+        case .flightNumber: return "airplane"
         }
     }
 }
@@ -88,6 +94,68 @@ class NumberTrainer: ObservableObject {
                 let year = Int.random(in: 1950...2030)
                 currentDisplay = "\(year)"
                 speakableContent = "\(year)"
+                
+            case .month:
+                // 日期+月份：le 15 janvier
+                // 定义每个月份及其对应的天数
+                let monthsWithDays: [(name: String, days: Int)] = [
+                    ("janvier", 31),    // 1月
+                    ("février", 28),    // 2月（简化处理，不考虑闰年）
+                    ("mars", 31),       // 3月
+                    ("avril", 30),      // 4月
+                    ("mai", 31),        // 5月
+                    ("juin", 30),       // 6月
+                    ("juillet", 31),    // 7月
+                    ("août", 31),       // 8月
+                    ("septembre", 30),  // 9月
+                    ("octobre", 31),    // 10月
+                    ("novembre", 30),   // 11月
+                    ("décembre", 31)    // 12月
+                ]
+                
+                // 随机选择一个月份
+                let selectedMonth = monthsWithDays.randomElement()!
+                let monthName = selectedMonth.name
+                let maxDay = selectedMonth.days
+                
+                // 根据该月份的实际天数生成日期
+                let day = Int.random(in: 1...maxDay)
+                
+                // 显示格式：le 15 janvier
+                currentDisplay = "le \(day) \(monthName)"
+                // 语音格式：le 15 janvier (或 le premier janvier 对于1号)
+                if day == 1 {
+                    speakableContent = "le premier \(monthName)"
+                } else {
+                    speakableContent = "le \(day) \(monthName)"
+                }
+                
+            case .trainNumber:
+                // 火车号：TGV 6523 或 Intercités 4521
+                let trainTypes = ["TGV", "Intercités", "TER"]
+                let trainType = trainTypes.randomElement()!
+                let number = Int.random(in: 1000...9999)
+                
+                currentDisplay = "\(trainType) \(number)"
+                // 语音：分开读，让数字更清晰
+                speakableContent = "\(trainType), \(number)"
+                
+            case .flightNumber:
+                // 航班号：AF 1234 (法航), EK 73 (阿联酋航空)
+                let airlines = [
+                    ("AF", "Air France"),      // 法国航空
+                    ("EK", "Emirates"),        // 阿联酋航空
+                    ("BA", "British Airways"), // 英国航空
+                    ("LH", "Lufthansa"),       // 汉莎航空
+                    ("KL", "KLM")              // 荷兰皇家航空
+                ]
+                let airline = airlines.randomElement()!
+                let flightNum = Int.random(in: 10...9999)
+                
+                currentDisplay = "\(airline.0) \(flightNum)"
+                // 语音：逐字母读航空公司代码，然后读数字
+                let code = airline.0.map { String($0) }.joined(separator: ", ")
+                speakableContent = "\(code), \(flightNum)"
             }
         }
         

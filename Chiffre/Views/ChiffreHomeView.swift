@@ -122,8 +122,12 @@ struct ChiffreHomeView: View {
         }
         .sheet(isPresented: $showSettings) {
             SettingsSheet(trainer: trainer)
-                .presentationDetents([.height(400)])
+                .presentationDetents([.height(520)])  // 增加高度以容纳语音选择
                 .presentationCornerRadius(30)
+        }
+        .onAppear {
+            // 调试：打印可用的法语语音
+            SpeechManager.printAvailableFrenchVoices()
         }
     }
     

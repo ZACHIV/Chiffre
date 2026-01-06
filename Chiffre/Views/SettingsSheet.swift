@@ -39,6 +39,11 @@ struct SettingsSheet: View {
                 
                 Divider().padding(.horizontal, 30)
                 
+                // MARK: - 2. 语音选择 (横向滚动胶囊)
+                VoiceSelectionSection()
+                
+                Divider().padding(.horizontal, 30)
+                
                 // MARK: - 2. 动态内容区
                 // 只有在数字模式下，才显示范围调节
                 if trainer.mode == .number {
@@ -93,6 +98,9 @@ struct SettingsSheet: View {
         case .price: return "练习含小数点的价格表达\n(如 12,50 €)"
         case .time: return "练习 24 小时制时间表达\n(如 14h30)"
         case .year: return "练习历史年份或近期年份\n(1950 - 2030)"
+        case .month: return "练习日期+月份表达\n(如 le 15 janvier)"
+        case .trainNumber: return "练习法国火车号码\n(TGV, Intercités, TER)"
+        case .flightNumber: return "练习国际航班号\n(如 AF 1234, EK 73)"
         default: return ""
         }
     }
@@ -144,6 +152,96 @@ struct PresetButton: View {
                 .foregroundStyle(isSelected ? .white : SurrealTheme.colors.deepIndigo)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .shadow(color: Color.black.opacity(0.05), radius: 2, y: 1)
+        }
+    }
+}
+
+// MARK: - 语音选择组件
+struct VoiceSelectionSection: View {
+    @AppStorage("selectedVoice") private var selectedVoice: String = FrenchVoice.amelie.rawValue
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Voix (语音)")
+                    .font(SurrealTheme.Typography.header(16))
+                    .foregroundStyle(.secondary)
+                
+                Spacer()
+                
+                // 试听按钮
+                Button {
+                    testCurrentVoice()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "speaker.wave.2.fill")
+                        Text("试听")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(SurrealTheme.colors.coral)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(SurrealTheme.colors.coral.opacity(0.1))
+                    .clipShape(Capsule())
+                }
+            }
+            .padding(.horizontal, 30)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(FrenchVoice.allCases) { voice in
+                        VoiceCapsule(
+                            voice: voice,
+                            isSelected: selectedVoice == voice.rawValue
+                        ) {
+                            selectedVoice = voice.rawValue
+                            // 切换语音后立即试听
+                            testVoice(voice)
+                        }
+                    }
+                }
+                .padding(.horizontal, 30)
+            }
+        }
+    }
+    
+    private func testCurrentVoice() {
+        let voice = FrenchVoice(rawValue: selectedVoice) ?? .amelie
+        testVoice(voice)
+    }
+    
+    private func testVoice(_ voice: FrenchVoice) {
+        // 测试语音：朗读一个示例句子
+        let testPhrases = [
+            "Bonjour, je m'appelle \(voice.rawValue)",
+            "le quinze janvier",
+            "douze euros cinquante"
+        ]
+        SpeechManager.shared.speak(testPhrases.randomElement()!)
+    }
+}
+
+// 辅助组件：语音选择胶囊
+struct VoiceCapsule: View {
+    let voice: FrenchVoice
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: voice.icon)
+                Text(voice.displayName)
+                    .font(.caption).bold()
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 16)
+            .background(isSelected ? SurrealTheme.colors.deepIndigo : Color.black.opacity(0.05))
+            .foregroundStyle(isSelected ? .white : SurrealTheme.colors.deepIndigo)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule().strokeBorder(SurrealTheme.colors.deepIndigo.opacity(0.1), lineWidth: 1)
+            )
         }
     }
 }
