@@ -35,6 +35,7 @@ struct ReferenceView: View {
                 Text("Référence")
                     .font(.custom("Didot", size: 42))
                     .foregroundStyle(SurrealTheme.colors.deepIndigo)
+                    .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.6), radius: 10, y: 5)
                     .padding(.top, 60)
                     .padding(.bottom, 10)
                 
@@ -51,7 +52,7 @@ struct ReferenceView: View {
                                     
                                     Text(group.cnSubtitle)
                                         .font(.system(size: 10, weight: .regular))
-                                        .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.4))
+                                        .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.5))
                                         .tracking(1)
                                 }
                                 .padding(.leading, 20)

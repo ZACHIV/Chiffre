@@ -6,8 +6,17 @@ struct SettingsSheet: View {
     
     var body: some View {
         ZStack {
-            // 背景色保持之前的米色或白色
-            Color(red: 0.99, green: 0.98, blue: 0.97).ignoresSafeArea()
+            // Monet-inspired soft gradient background
+            LinearGradient(
+                colors: [
+                    SurrealTheme.colors.skyDawn.opacity(0.3),
+                    SurrealTheme.colors.lavenderMist.opacity(0.4),
+                    Color.white
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
             
             VStack(spacing: 24) {
                 // 顶部抓手

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SpeakingPracticeView: View {
     @StateObject private var trainer = SpeakingTrainer()
+    @State private var borderRotation: Double = 0  // 边框动画
     
     var body: some View {
         ZStack {
@@ -12,6 +13,7 @@ struct SpeakingPracticeView: View {
                 Text("Prononciation")
                     .font(SurrealTheme.Typography.header(24))
                     .foregroundStyle(SurrealTheme.colors.deepIndigo)
+                    .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 6, y: 3)
                     .padding(.top, 60)
                 
                 Spacer()
@@ -26,11 +28,24 @@ struct SpeakingPracticeView: View {
                                 .fill(Color.white.opacity(0.3))
                         )
                         .frame(width: 300, height: 300)
-                        .shadow(color: shadowColor, radius: 25, y: 12)
-                        .shadow(color: Color.white.opacity(0.6), radius: 10, x: -4, y: -4)
+                        .shadow(color: shadowColor, radius: 30, y: 15)
+                        .shadow(color: Color.white.opacity(0.5), radius: 12, x: -5, y: -5)
                         .overlay(
                             RoundedRectangle(cornerRadius: 40)
-                                .stroke(borderColor, lineWidth: 1.5)
+                                .stroke(
+                                    AngularGradient(
+                                        colors: [
+                                            SurrealTheme.colors.waterBlue,
+                                            SurrealTheme.colors.lavenderMist,
+                                            SurrealTheme.colors.lilyPad,
+                                            SurrealTheme.colors.skyDawn,
+                                            SurrealTheme.colors.waterBlue
+                                        ],
+                                        center: .center,
+                                        angle: .degrees(borderRotation)
+                                    ),
+                                    lineWidth: 2
+                                )
                         )
                     
                     VStack(spacing: 0) {
@@ -48,7 +63,7 @@ struct SpeakingPracticeView: View {
                                 Text("Toucher pour écouter")
                             }
                             .font(.caption)
-                            .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.4))
+                            .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.5))
                         }
                         .onTapGesture {
                             trainer.speakTarget()
@@ -65,8 +80,9 @@ struct SpeakingPracticeView: View {
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 4)
                                     .background(
-                                        Capsule().fill(Color.red.opacity(0.08))
+                                        Capsule().fill(Color.red.opacity(0.06))
                                     )
+                                    .shadow(color: Color.red.opacity(0.15), radius: 6, y: 2)
                                     .transition(.scale.combined(with: .opacity))
                             }
                             
@@ -74,7 +90,8 @@ struct SpeakingPracticeView: View {
                             if trainer.status == .correct {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 40))
-                                    .foregroundStyle(Color.green)
+                                    .foregroundStyle(SurrealTheme.colors.lilyPad)
+                                    .shadow(color: SurrealTheme.colors.lilyPad.opacity(0.4), radius: 10, y: 5)
                                     .transition(.scale.combined(with: .opacity))
                             }
                             
@@ -120,15 +137,21 @@ struct SpeakingPracticeView: View {
                         }
                     )
                     .shadow(color: SurrealTheme.colors.deepIndigo.opacity(0.1), radius: 15, y: 8)
-                    .shadow(color: Color.white.opacity(0.7), radius: 5, x: -3, y: -3)
+                    .shadow(color: Color.white.opacity(0.5), radius: 8, x: -4, y: -4)
                     .overlay(
                         Capsule().stroke(
-                            LinearGradient(
-                                colors: [.white.opacity(0.7), .white.opacity(0.1)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                            AngularGradient(
+                                colors: [
+                                    SurrealTheme.colors.waterBlue,
+                                    SurrealTheme.colors.lavenderMist,
+                                    SurrealTheme.colors.lilyPad,
+                                    SurrealTheme.colors.skyDawn,
+                                    SurrealTheme.colors.waterBlue
+                                ],
+                                center: .center,
+                                angle: .degrees(borderRotation * 0.7)  // 稍慢一点
                             ),
-                            lineWidth: 0.5
+                            lineWidth: 1
                         )
                     )
                 }
@@ -181,7 +204,7 @@ struct SpeakingPracticeView: View {
                                 Text("Passer")
                                     .font(.system(size: 12, weight: .medium))
                             }
-                            .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.4))
+                            .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.5))
                             .frame(width: 60, height: 60)
                             .contentShape(Rectangle())
                         }
@@ -191,13 +214,19 @@ struct SpeakingPracticeView: View {
                 .padding(.bottom, 40)
             }
         }
+        .onAppear {
+            // 启动边框动画
+            withAnimation(.linear(duration: 8).repeatForever(autoreverses: false)) {
+                borderRotation = 360
+            }
+        }
     }
     
     // MARK: - 样式逻辑
     
     var shadowColor: Color {
         switch trainer.status {
-        case .correct: return Color.green.opacity(0.3)
+        case .correct: return SurrealTheme.colors.lilyPad.opacity(0.3)
         case .wrong: return Color.red.opacity(0.2)
         case .listening: return SurrealTheme.colors.coral.opacity(0.25)
         default: return SurrealTheme.colors.deepIndigo.opacity(0.1)
@@ -207,17 +236,29 @@ struct SpeakingPracticeView: View {
     var borderColor: LinearGradient {
         switch trainer.status {
         case .correct:
-            return LinearGradient(colors: [.green.opacity(0.6), .green.opacity(0.1)], startPoint: .top, endPoint: .bottom)
+            return LinearGradient(
+                colors: [SurrealTheme.colors.lilyPad.opacity(0.7), SurrealTheme.colors.lilyPad.opacity(0.3)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         case .wrong:
-            return LinearGradient(colors: [.red.opacity(0.6), .red.opacity(0.1)], startPoint: .top, endPoint: .bottom)
+            return LinearGradient(
+                colors: [Color.red.opacity(0.6), Color.red.opacity(0.2)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         default:
-            return LinearGradient(colors: [.white.opacity(0.8), .white.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            return LinearGradient(
+                colors: [.white.opacity(0.8), .white.opacity(0.2)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         }
     }
     
     var textColor: Color {
         switch trainer.status {
-        case .correct: return Color.green
+        case .correct: return SurrealTheme.colors.lilyPad
         case .wrong: return Color.red.opacity(0.8)
         case .listening: return SurrealTheme.colors.coral
         default: return SurrealTheme.colors.deepIndigo
@@ -225,7 +266,7 @@ struct SpeakingPracticeView: View {
     }
     
     var micButtonColor: Color {
-        if trainer.status == .correct { return Color.green }
+        if trainer.status == .correct { return SurrealTheme.colors.lilyPad }
         if trainer.status == .wrong { return Color.red.opacity(0.8) }
         if trainer.status == .listening { return SurrealTheme.colors.coral }
         return SurrealTheme.colors.deepIndigo

@@ -3,6 +3,7 @@ import SwiftUI
 struct ChiffreHomeView: View {
     @StateObject private var trainer = NumberTrainer()
     @State private var showSettings = false
+    @State private var borderRotation: Double = 0  // 边框动画
     
     var body: some View {
         ZStack {
@@ -14,6 +15,7 @@ struct ChiffreHomeView: View {
                 Text("Chiffre")
                     .font(SurrealTheme.Typography.title(48))
                     .foregroundStyle(SurrealTheme.colors.deepIndigo)
+                    .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
                     .padding(.top, 60)
                 
                 Spacer()
@@ -28,18 +30,23 @@ struct ChiffreHomeView: View {
                                 .fill(Color.white.opacity(0.25))
                         )
                         .frame(width: 300, height: 300)
-                        // 优化阴影：双层阴影打造立体感
-                        .shadow(color: SurrealTheme.colors.deepIndigo.opacity(0.15), radius: 25, y: 12) // 深色投影
-                        .shadow(color: Color.white.opacity(0.6), radius: 10, x: -4, y: -4) // 顶部高光
+                        .shadow(color: SurrealTheme.colors.deepIndigo.opacity(0.12), radius: 30, y: 15)
+                        .shadow(color: Color.white.opacity(0.5), radius: 12, x: -5, y: -5)
                         .overlay(
                             RoundedRectangle(cornerRadius: 40)
                                 .stroke(
-                                    LinearGradient(
-                                        colors: [.white.opacity(0.8), .white.opacity(0.1)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
+                                    AngularGradient(
+                                        colors: [
+                                            SurrealTheme.colors.waterBlue,
+                                            SurrealTheme.colors.lavenderMist,
+                                            SurrealTheme.colors.lilyPad,
+                                            SurrealTheme.colors.skyDawn,
+                                            SurrealTheme.colors.waterBlue
+                                        ],
+                                        center: .center,
+                                        angle: .degrees(borderRotation)
                                     ),
-                                    lineWidth: 1.5
+                                    lineWidth: 2
                                 )
                         )
                     
@@ -54,23 +61,17 @@ struct ChiffreHomeView: View {
                             .foregroundStyle(SurrealTheme.colors.deepIndigo)
                             .multilineTextAlignment(.center)
                             .transition(.scale.combined(with: .opacity))
-                            .minimumScaleFactor(0.4)
-                            .lineLimit(1)
-                            // 长文本优化：胶囊背景
-                            .padding(.vertical, isLongText ? 12 : 0)
-                            .padding(.horizontal, isLongText ? 24 : 0)
-                            .background(
-                                Capsule()
-                                    .fill(Color.white.opacity(isLongText ? 0.5 : 0))
-                                    .shadow(color: SurrealTheme.colors.deepIndigo.opacity(isLongText ? 0.05 : 0), radius: 5, y: 2)
-                            )
-                            .padding(.horizontal, 20)
+                            .minimumScaleFactor(0.5)
+                            .lineLimit(isLongText ? 2 : 1)  // 长文本允许2行
+                            .lineSpacing(isLongText ? 8 : 0)  // 长文本增加行间距
+                            .padding(.horizontal, 30)
                             
                     } else {
                         // --- 隐藏状态 ---
                         Image(systemName: "ear.and.waveform")
                             .font(.system(size: 80))
-                            .foregroundStyle(SurrealTheme.colors.coral.opacity(0.8))
+                            .foregroundStyle(SurrealTheme.colors.coral)
+                            .shadow(color: SurrealTheme.colors.coral.opacity(0.3), radius: 10, y: 5)
                             .transition(.scale.combined(with: .opacity))
                             .onTapGesture {
                                 trainer.replay()
@@ -110,7 +111,11 @@ struct ChiffreHomeView: View {
                             .frame(width: 150, height: 64)
                             .background(trainer.isRevealed ? SurrealTheme.colors.deepIndigo : SurrealTheme.colors.coral)
                             .clipShape(Capsule())
-                            .shadow(color: (trainer.isRevealed ? SurrealTheme.colors.deepIndigo : SurrealTheme.colors.coral).opacity(0.4), radius: 10, y: 5)
+                            .shadow(
+                                color: (trainer.isRevealed ? SurrealTheme.colors.deepIndigo : SurrealTheme.colors.coral).opacity(0.5), 
+                                radius: 15, 
+                                y: 8
+                            )
                     }
                     
                     CircleButton(icon: "slider.horizontal.3") {
@@ -118,6 +123,12 @@ struct ChiffreHomeView: View {
                     }
                 }
                 .padding(.bottom, 50)
+            }
+        }
+        .onAppear {
+            // 启动边框动画
+            withAnimation(.linear(duration: 8).repeatForever(autoreverses: false)) {
+                borderRotation = 360
             }
         }
         .sheet(isPresented: $showSettings) {
