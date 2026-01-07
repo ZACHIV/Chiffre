@@ -33,9 +33,9 @@ struct ReferenceView: View {
             VStack(spacing: 0) {
                 // 顶部标题
                 Text("Référence")
-                    .font(.custom("Didot", size: 42))
+                    .font(SurrealTheme.Typography.title(48))
                     .foregroundStyle(SurrealTheme.colors.deepIndigo)
-                    .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.6), radius: 10, y: 5)
+                    .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
                     .padding(.top, 60)
                     .padding(.bottom, 10)
                 

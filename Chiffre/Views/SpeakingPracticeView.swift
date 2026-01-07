@@ -11,9 +11,9 @@ struct SpeakingPracticeView: View {
             VStack(spacing: 0) {
                 // 顶部标题
                 Text("Prononciation")
-                    .font(SurrealTheme.Typography.header(24))
+                    .font(SurrealTheme.Typography.title(48))
                     .foregroundStyle(SurrealTheme.colors.deepIndigo)
-                    .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 6, y: 3)
+                    .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
                     .padding(.top, 60)
                 
                 Spacer()
