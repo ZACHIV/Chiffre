@@ -8,22 +8,22 @@
     --sky-dawn: #FFE5D9;
     --water-blue: #B8D8E8;
     --lavender-mist: #E6E6FA;
-    
+
     /* Nature (自然色调) */
     --lily-pad: #C8D5B9;
-    
+
     /* Primary Colors (主色调) */
     --deep-indigo: #2A3594;
     --coral: #FF8A66;
-    
+
     /* Supporting (辅助色调) */
     --soft-shadow: #8390AD;
-    
+
     /* Glass & Light */
     --glass-white: rgba(255, 255, 255, 0.65);
     --glass-stroke: rgba(255, 255, 255, 0.5);
     --shimmer: rgba(255, 255, 255, 0.5);
-    
+
     /* Shadows */
     --shadow-light: rgba(0, 0, 0, 0.05);
     --shadow-medium: rgba(42, 53, 148, 0.12);
@@ -64,8 +64,15 @@ body {
 }
 
 @keyframes gradientShift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
 }
 
 /* Floating Clouds */
@@ -105,8 +112,15 @@ body {
 }
 
 @keyframes floatCloud {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(30px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(30px);
+    }
 }
 
 /* Light Particles */
@@ -128,8 +142,17 @@ body {
 }
 
 @keyframes particlePulse {
-    0%, 100% { opacity: 0.6; transform: scale(1); }
-    50% { opacity: 0.2; transform: scale(0.8); }
+
+    0%,
+    100% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.2;
+        transform: scale(0.8);
+    }
 }
 
 /* ----- Typography ----- */
@@ -177,7 +200,7 @@ body {
     justify-content: center;
     position: relative;
     cursor: pointer;
-    box-shadow: 
+    box-shadow:
         0 15px 30px var(--shadow-medium),
         -5px -5px 12px rgba(255, 255, 255, 0.5);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -185,7 +208,7 @@ body {
 
 .main-card:hover {
     transform: translateY(-5px);
-    box-shadow: 
+    box-shadow:
         0 20px 40px var(--shadow-medium),
         -5px -5px 12px rgba(255, 255, 255, 0.5);
 }
@@ -196,20 +219,20 @@ body {
     position: absolute;
     inset: -2px;
     border-radius: 42px;
-    background: conic-gradient(
-        from var(--rotation, 0deg),
-        var(--water-blue),
-        var(--lavender-mist),
-        var(--lily-pad),
-        var(--sky-dawn),
-        var(--water-blue)
-    );
+    background: conic-gradient(from var(--rotation, 0deg),
+            var(--water-blue),
+            var(--lavender-mist),
+            var(--lily-pad),
+            var(--sky-dawn),
+            var(--water-blue));
     z-index: -1;
     animation: rotateBorder 8s linear infinite;
 }
 
 @keyframes rotateBorder {
-    to { --rotation: 360deg; }
+    to {
+        --rotation: 360deg;
+    }
 }
 
 @property --rotation {
@@ -331,11 +354,10 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(135deg, 
-        rgba(255, 229, 217, 0.95),
-        rgba(230, 230, 250, 0.95),
-        rgba(255, 255, 255, 0.98)
-    );
+    background: linear-gradient(135deg,
+            rgba(255, 229, 217, 0.95),
+            rgba(230, 230, 250, 0.95),
+            rgba(255, 255, 255, 0.98));
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 30px 30px 0 0;
@@ -405,6 +427,7 @@ body {
 }
 
 .mode-pill {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -667,18 +690,18 @@ input[type=range]::-webkit-slider-thumb {
     .title {
         font-size: 40px;
     }
-    
+
     .main-card {
         width: 260px;
         height: 260px;
     }
-    
+
     .main-btn {
         min-width: 130px;
         height: 56px;
         font-size: 18px;
     }
-    
+
     .circle-btn {
         width: 50px;
         height: 50px;
@@ -691,7 +714,7 @@ input[type=range]::-webkit-slider-thumb {
         left: 50%;
         transform: translateX(-50%) translateY(100%);
     }
-    
+
     .settings-panel.active {
         transform: translateX(-50%) translateY(0);
     }
@@ -703,6 +726,7 @@ input[type=range]::-webkit-slider-thumb {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
