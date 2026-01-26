@@ -29,6 +29,8 @@ function initApp() {
     initParticles();
     initModeList();
     initReferenceGrids();
+    initVoiceSettings();
+    setupShortcuts();
 
     // 绑定事件
     bindEvents();
@@ -65,6 +67,11 @@ function cacheElements() {
     elements.descriptionText = document.getElementById('description-text');
 
     elements.navBtns = document.querySelectorAll('.nav-btn');
+
+    // New Settings Elements
+    elements.voiceSelect = document.getElementById('voice-select');
+    elements.rateSlider = document.getElementById('rate-slider');
+    elements.rateDisplay = document.getElementById('rate-display');
 }
 
 /**
@@ -72,18 +79,103 @@ function cacheElements() {
  */
 function initParticles() {
     const container = document.getElementById('particles');
-    const particleCount = 50;
+    // ... existing particle code is fine, omitted for brevity if unchanged, but since this is replace_file_content, I must provide full context or use multi_replace.
+    // Wait, replace_file_content requires contiguous block. I am replacing the END of the file basically, or a large chunk of it? 
+    // Actually I should use multi_replace to be safe and surgical, or replace specific functions.
+    // But since I need to add initVoiceSettings() call in initApp(), and change cacheElements, and add new functions...
+    // Let's stick to replace_file_content but targeting specific blocks if possible.
+    // However, I need to insert `initVoiceSettings()` in `initApp`.
 
-    for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = `${Math.random() * 100}%`;
-        particle.style.top = `${Math.random() * 100}%`;
-        particle.style.width = `${4 + Math.random() * 8}px`;
-        particle.style.height = particle.style.width;
-        particle.style.animationDelay = `${Math.random() * 2}s`;
-        container.appendChild(particle);
+    // Let's restart the thought for a second.
+    // I will use multi_replace for app.js to be clean.
+    // 1. Update initApp to call initVoiceSettings and setupShortcuts
+    // 2. Update cacheElements
+    // 3. Add initVoiceSettings, updateVoiceList, setupShortcuts functions
+    // 4. Update bindEvents
+
+    // Let's do this in the next turn since I cannot switch tool mid-thought generation easily without being messy.
+    // Actually I will just use multi_replace_file_content in the tool call below.
+}
+
+for (let i = 0; i < particleCount; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    particle.style.left = `${Math.random() * 100}%`;
+    particle.style.top = `${Math.random() * 100}%`;
+    particle.style.width = `${4 + Math.random() * 8}px`;
+    particle.style.height = particle.style.width;
+    particle.style.animationDelay = `${Math.random() * 2}s`;
+    container.appendChild(particle);
+}
+}
+
+/**
+ * 初始化语音设置
+ */
+function initVoiceSettings() {
+    updateVoiceList();
+    window.addEventListener('voicesLoaded', updateVoiceList);
+
+    // 设置初始语速显示
+    const savedRate = localStorage.getItem('chiffre_rate') || 1.0;
+    elements.rateSlider.value = savedRate;
+    elements.rateDisplay.textContent = `${parseFloat(savedRate).toFixed(1)}x`;
+}
+
+/**
+ * 更新语音列表
+ */
+function updateVoiceList() {
+    const voices = speechManager.getVoices();
+    const select = elements.voiceSelect;
+
+    // 如果没有元素（可能在初始化前），跳过
+    if (!select) return;
+
+    select.innerHTML = '';
+
+    if (voices.length === 0) {
+        const option = document.createElement('option');
+        option.text = "Chargement...";
+        select.add(option);
+        return;
     }
+
+    voices.forEach(voice => {
+        const option = document.createElement('option');
+        option.value = voice.voiceURI;
+        option.textContent = `${voice.name} (${voice.lang})`; // 显示名称和语言
+        if (speechManager.voice && voice.voiceURI === speechManager.voice.voiceURI) {
+            option.selected = true;
+        }
+        select.appendChild(option);
+    });
+}
+
+/**
+ * 设置键盘快捷键
+ */
+function setupShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // 如果设置面板打开，不触发快捷键（或者根据需求决定）
+        // 这里简单处理：空格键触发主按钮，R键重播
+
+        if (e.code === 'Space') {
+            e.preventDefault(); // 防止滚动页面
+            handleActionClick();
+
+            // 添加按钮按下的视觉效果
+            elements.actionBtn.classList.add('active');
+            setTimeout(() => elements.actionBtn.classList.remove('active'), 150);
+        }
+        else if (e.code === 'KeyR') {
+            trainer.replay();
+
+            // 添加按钮按下的视觉效果
+            elements.replayBtn.classList.add('active');
+            setTimeout(() => elements.replayBtn.classList.remove('active'), 150);
+        }
+    });
 }
 
 /**
@@ -206,6 +298,18 @@ function bindEvents() {
         if (e.target === elements.settingsPanel) {
             closeSettings();
         }
+    });
+
+    // 语音选择
+    elements.voiceSelect.addEventListener('change', (e) => {
+        speechManager.setVoice(e.target.value);
+    });
+
+    // 语速滑块
+    elements.rateSlider.addEventListener('input', (e) => {
+        const rate = e.target.value;
+        speechManager.setRate(rate);
+        elements.rateDisplay.textContent = `${parseFloat(rate).toFixed(1)}x`;
     });
 }
 
@@ -367,4 +471,18 @@ function navigateTo(page) {
 }
 
 // 页面加载完成后初始化
+// 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', initApp);
+
+// 注册 Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(registration => {
+                console.log('SW registered: ', registration);
+            })
+            .catch(registrationError => {
+                console.log('SW registration failed: ', registrationError);
+            });
+    });
+}
