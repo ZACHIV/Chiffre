@@ -79,34 +79,18 @@ function cacheElements() {
  */
 function initParticles() {
     const container = document.getElementById('particles');
-    // ... existing particle code is fine, omitted for brevity if unchanged, but since this is replace_file_content, I must provide full context or use multi_replace.
-    // Wait, replace_file_content requires contiguous block. I am replacing the END of the file basically, or a large chunk of it? 
-    // Actually I should use multi_replace to be safe and surgical, or replace specific functions.
-    // But since I need to add initVoiceSettings() call in initApp(), and change cacheElements, and add new functions...
-    // Let's stick to replace_file_content but targeting specific blocks if possible.
-    // However, I need to insert `initVoiceSettings()` in `initApp`.
+    const particleCount = 50;
 
-    // Let's restart the thought for a second.
-    // I will use multi_replace for app.js to be clean.
-    // 1. Update initApp to call initVoiceSettings and setupShortcuts
-    // 2. Update cacheElements
-    // 3. Add initVoiceSettings, updateVoiceList, setupShortcuts functions
-    // 4. Update bindEvents
-
-    // Let's do this in the next turn since I cannot switch tool mid-thought generation easily without being messy.
-    // Actually I will just use multi_replace_file_content in the tool call below.
-}
-
-for (let i = 0; i < particleCount; i++) {
-    const particle = document.createElement('div');
-    particle.className = 'particle';
-    particle.style.left = `${Math.random() * 100}%`;
-    particle.style.top = `${Math.random() * 100}%`;
-    particle.style.width = `${4 + Math.random() * 8}px`;
-    particle.style.height = particle.style.width;
-    particle.style.animationDelay = `${Math.random() * 2}s`;
-    container.appendChild(particle);
-}
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.top = `${Math.random() * 100}%`;
+        particle.style.width = `${4 + Math.random() * 8}px`;
+        particle.style.height = particle.style.width;
+        particle.style.animationDelay = `${Math.random() * 2}s`;
+        container.appendChild(particle);
+    }
 }
 
 /**
