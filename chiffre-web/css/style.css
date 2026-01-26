@@ -410,29 +410,27 @@ body {
 
 /* Mode Pills */
 .mode-scroll {
-    overflow-x: auto;
-    margin: 0 -20px;
-    padding: 0 20px;
-    -webkit-overflow-scrolling: touch;
-}
-
-.mode-scroll::-webkit-scrollbar {
-    display: none;
+    /* Removed horizontal scroll */
+    width: 100%;
 }
 
 .mode-list {
     display: flex;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
     padding: 4px 0;
+    justify-content: flex-start;
+    /* Align left or center? User said "show all". Left is standard. */
 }
 
 .mode-pill {
     flex-shrink: 0;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: 10px 16px;
-    border-radius: 20px;
+    padding: 8px 12px;
+    border-radius: 12px;
     border: 1px solid rgba(42, 53, 148, 0.1);
     background: rgba(0, 0, 0, 0.05);
     color: var(--deep-indigo);
