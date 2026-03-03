@@ -12,7 +12,7 @@ struct ChiffreHomeView: View {
             
             VStack(spacing: 0) {
                 // 2. 顶部标题
-                Text("Chiffre")
+                Text(trainer.dataProvider.appName)
                     .font(SurrealTheme.Typography.title(48))
                     .foregroundStyle(SurrealTheme.colors.deepIndigo)
                     .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
@@ -84,7 +84,7 @@ struct ChiffreHomeView: View {
                 }
                 
                 // 提示文字
-                Text(trainer.isRevealed ? "C'est ça!" : "Écoutez...")
+                Text(trainer.isRevealed ? trainer.dataProvider.successText : trainer.dataProvider.listenText)
                     .font(SurrealTheme.Typography.body(18))
                     .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.6))
                     .padding(.top, 30)
@@ -105,7 +105,7 @@ struct ChiffreHomeView: View {
                             trainer.reveal()
                         }
                     } label: {
-                        Text(trainer.isRevealed ? "Suivant" : "Révéler")
+                        Text(trainer.isRevealed ? trainer.dataProvider.nextText : trainer.dataProvider.revealText)
                             .font(SurrealTheme.Typography.header(20))
                             .foregroundStyle(.white)
                             .frame(width: 150, height: 64)
@@ -135,10 +135,6 @@ struct ChiffreHomeView: View {
             SettingsSheet(trainer: trainer)
                 .presentationDetents([.height(520)])  // 增加高度以容纳语音选择
                 .presentationCornerRadius(30)
-        }
-        .onAppear {
-            // 调试：打印可用的法语语音
-            SpeechManager.printAvailableFrenchVoices()
         }
     }
     

@@ -26,6 +26,11 @@ struct SettingsSheet: View {
                     .font(SurrealTheme.Typography.header(24))
                     .foregroundStyle(SurrealTheme.colors.deepIndigo)
                 
+                // MARK: - 0. 语言选择 (新增)
+                LanguageSelectionSection()
+                
+                Divider().padding(.horizontal, 30)
+                
                 // MARK: - 1. 模式选择 (横向滚动胶囊)
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Mode (模式)")
@@ -167,8 +172,6 @@ struct PresetButton: View {
 
 // MARK: - 语音选择组件
 struct VoiceSelectionSection: View {
-    @AppStorage("selectedVoice") private var selectedVoice: String = FrenchVoice.amelie.rawValue
-    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -180,7 +183,7 @@ struct VoiceSelectionSection: View {
                 
                 // 试听按钮
                 Button {
-                    testCurrentVoice()
+                    SpeechManager.shared.speak(LanguageVoiceManager.getTestPhrase())
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "speaker.wave.2.fill")
@@ -196,16 +199,73 @@ struct VoiceSelectionSection: View {
             }
             .padding(.horizontal, 30)
             
+            // 根据当前语言显示对应的语音选择
+            if LanguageVoiceManager.currentLanguage == .french {
+                FrenchVoiceSelection()
+            } else {
+                SpanishVoiceSelection()
+            }
+        }
+    }
+}
+
+struct FrenchVoiceSelection: View {
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(FrenchVoice.allCases) { voice in
+                    VoiceCapsule(
+                        voice: voice,
+                        isSelected: LanguageVoiceManager.selectedFrenchVoice == voice
+                    ) {
+                        LanguageVoiceManager.selectedFrenchVoice = voice
+                        SpeechManager.shared.speak("Bonjour, je m'appelle \(voice.rawValue)")
+                    }
+                }
+            }
+            .padding(.horizontal, 30)
+        }
+    }
+}
+
+struct SpanishVoiceSelection: View {
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(SpanishVoice.allCases) { voice in
+                    VoiceCapsule(
+                        voice: voice,
+                        isSelected: LanguageVoiceManager.selectedSpanishVoice == voice
+                    ) {
+                        LanguageVoiceManager.selectedSpanishVoice = voice
+                        SpeechManager.shared.speak("Hola, me llamo \(voice.rawValue)")
+                    }
+                }
+            }
+            .padding(.horizontal, 30)
+        }
+    }
+}
+
+// MARK: - 语言选择组件 (新增)
+struct LanguageSelectionSection: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Langue (语言)")
+                .font(SurrealTheme.Typography.header(16))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 30)
+            
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(FrenchVoice.allCases) { voice in
-                        VoiceCapsule(
-                            voice: voice,
-                            isSelected: selectedVoice == voice.rawValue
+                    ForEach(AppLanguage.allCases) { language in
+                        LanguageCapsule(
+                            language: language,
+                            isSelected: LanguageVoiceManager.currentLanguage == language
                         ) {
-                            selectedVoice = voice.rawValue
-                            // 切换语音后立即试听
-                            testVoice(voice)
+                            LanguageVoiceManager.currentLanguage = language
+                            // 切换语言后试听
+                            testLanguage(language)
                         }
                     }
                 }
@@ -214,25 +274,46 @@ struct VoiceSelectionSection: View {
         }
     }
     
-    private func testCurrentVoice() {
-        let voice = FrenchVoice(rawValue: selectedVoice) ?? .amelie
-        testVoice(voice)
+    private func testLanguage(_ language: AppLanguage) {
+        let phrase: String
+        switch language {
+        case .french:
+            phrase = "Français sélectionné"
+        case .spanish:
+            phrase = "Español seleccionado"
+        }
+        SpeechManager.shared.speak(phrase)
     }
+}
+
+// 辅助组件：语言选择胶囊
+struct LanguageCapsule: View {
+    let language: AppLanguage
+    let isSelected: Bool
+    let action: () -> Void
     
-    private func testVoice(_ voice: FrenchVoice) {
-        // 测试语音：朗读一个示例句子
-        let testPhrases = [
-            "Bonjour, je m'appelle \(voice.rawValue)",
-            "le quinze janvier",
-            "douze euros cinquante"
-        ]
-        SpeechManager.shared.speak(testPhrases.randomElement()!)
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Text(language.icon)
+                Text(language.displayName)
+                    .font(.caption).bold()
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 16)
+            .background(isSelected ? SurrealTheme.colors.deepIndigo : Color.black.opacity(0.05))
+            .foregroundStyle(isSelected ? .white : SurrealTheme.colors.deepIndigo)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule().strokeBorder(SurrealTheme.colors.deepIndigo.opacity(0.1), lineWidth: 1)
+            )
+        }
     }
 }
 
 // 辅助组件：语音选择胶囊
 struct VoiceCapsule: View {
-    let voice: FrenchVoice
+    let voice: any LanguageVoice
     let isSelected: Bool
     let action: () -> Void
     
@@ -254,3 +335,4 @@ struct VoiceCapsule: View {
         }
     }
 }
+

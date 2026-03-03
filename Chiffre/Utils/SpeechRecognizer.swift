@@ -16,7 +16,11 @@ class SpeechRecognizer: ObservableObject {
     @Published var isRecording: Bool = false
     @Published var error: String?
     
-    private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "fr-FR"))
+    // 动态获取当前语言的语音识别器
+    private var speechRecognizer: SFSpeechRecognizer? {
+        let locale = LanguageVoiceManager.currentLanguage.localeIdentifier
+        return SFSpeechRecognizer(locale: Locale(identifier: locale))
+    }
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()

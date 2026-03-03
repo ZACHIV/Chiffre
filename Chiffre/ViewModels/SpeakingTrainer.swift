@@ -21,12 +21,13 @@ class SpeakingTrainer: ObservableObject {
     @ObservedObject var recognizer = SpeechRecognizer()
     private var cancellables = Set<AnyCancellable>()
     
-    private let formatter: NumberFormatter = {
+    // 动态获取当前语言的 NumberFormatter
+    private var formatter: NumberFormatter {
         let f = NumberFormatter()
         f.numberStyle = .spellOut
-        f.locale = Locale(identifier: "fr-FR")
+        f.locale = Locale(identifier: LanguageVoiceManager.currentLanguage.localeIdentifier)
         return f
-    }()
+    }
     
     init() {
         generateNew()

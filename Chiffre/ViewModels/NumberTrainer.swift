@@ -31,21 +31,31 @@ enum GameMode: String, CaseIterable, Identifiable {
 
 class NumberTrainer: ObservableObject {
     @Published var currentDisplay: String = "Prêt"
-    private var speakableContent: String = "" // 专门用于朗读的字符串
+    private var speakableContent: String = ""
     
     @Published var isRevealed: Bool = false
     
     @AppStorage("gameMode") var mode: GameMode = .number
-    @AppStorage("maxRange") var maxRange: Int = 100 // 仅用于数字模式
+    @AppStorage("maxRange") var maxRange: Int = 100
+    
+    // 根据当前语言返回对应的数据提供者
+    var dataProvider: LanguageDataProvider {
+        switch LanguageVoiceManager.currentLanguage {
+        case .french:
+            return FrenchDataProvider()
+        case .spanish:
+            return SpanishDataProvider()
+        }
+    }
     
     init() {
-            // 修复点 2: 不再显示 "Prêt"，初始化直接生成题目
-            generateNew(speakNow: false)
-        }
+        generateNew(speakNow: false)
+    }
     
     func generateNew(speakNow: Bool = true) {
         withAnimation(.spring()) {
             isRevealed = false
+            let provider = dataProvider
             
             switch mode {
             case .number:
@@ -54,106 +64,51 @@ class NumberTrainer: ObservableObject {
                 speakableContent = "\(num)"
                 
             case .phoneNumber:
-                // 电话：06 12 34 56 78
-                let prefix = Bool.random() ? "06" : "07"
+                let prefix = provider.formatPhonePrefix()
                 let p1 = String(format: "%02d", Int.random(in: 0...99))
                 let p2 = String(format: "%02d", Int.random(in: 0...99))
                 let p3 = String(format: "%02d", Int.random(in: 0...99))
                 let p4 = String(format: "%02d", Int.random(in: 0...99))
                 
                 currentDisplay = "\(prefix) \(p1) \(p2) \(p3) \(p4)"
-                // 语音：加逗号制造停顿
                 speakableContent = "\(prefix), \(p1), \(p2), \(p3), \(p4)"
                 
             case .price:
-                // 价格：12,50 €
                 let euro = Int.random(in: 1...100)
                 let cent = Int.random(in: 0...99)
-                // 法语习惯用逗号做小数点
-                currentDisplay = String(format: "%d,%02d €", euro, cent)
-                // 语音：TTS 能够识别 "euros"，但最好明确写出格式
-                // 比如 "12 euros 50"
-                speakableContent = "\(euro) euros \(cent)"
+                let formatted = provider.formatPrice(euro: euro, cent: cent)
+                currentDisplay = formatted.display
+                speakableContent = formatted.speakable
                 
             case .time:
-                // 时间：14h30
                 let hour = Int.random(in: 0...23)
                 let minute = Int.random(in: 0...59)
-                currentDisplay = String(format: "%02dh%02d", hour, minute)
-                
-                if minute == 0 {
-                    speakableContent = "\(hour) heures pile" // 整点
-                } else if minute == 30 {
-                    speakableContent = "\(hour) heures et demie" // 半点
-                } else {
-                    speakableContent = "\(hour) heures \(minute)"
-                }
+                let formatted = provider.formatTime(hour: hour, minute: minute)
+                currentDisplay = formatted.display
+                speakableContent = formatted.speakable
                 
             case .year:
-                // 年份：1950 - 2030
                 let year = Int.random(in: 1950...2030)
                 currentDisplay = "\(year)"
                 speakableContent = "\(year)"
                 
             case .month:
-                // 日期+月份：le 15 janvier
-                // 定义每个月份及其对应的天数
-                let monthsWithDays: [(name: String, days: Int)] = [
-                    ("janvier", 31),    // 1月
-                    ("février", 28),    // 2月（简化处理，不考虑闰年）
-                    ("mars", 31),       // 3月
-                    ("avril", 30),      // 4月
-                    ("mai", 31),        // 5月
-                    ("juin", 30),       // 6月
-                    ("juillet", 31),    // 7月
-                    ("août", 31),       // 8月
-                    ("septembre", 30),  // 9月
-                    ("octobre", 31),    // 10月
-                    ("novembre", 30),   // 11月
-                    ("décembre", 31)    // 12月
-                ]
-                
-                // 随机选择一个月份
-                let selectedMonth = monthsWithDays.randomElement()!
-                let monthName = selectedMonth.name
-                let maxDay = selectedMonth.days
-                
-                // 根据该月份的实际天数生成日期
-                let day = Int.random(in: 1...maxDay)
-                
-                // 显示格式：le 15 janvier
-                currentDisplay = "le \(day) \(monthName)"
-                // 语音格式：le 15 janvier (或 le premier janvier 对于1号)
-                if day == 1 {
-                    speakableContent = "le premier \(monthName)"
-                } else {
-                    speakableContent = "le \(day) \(monthName)"
-                }
+                let monthData = provider.months.randomElement()!
+                let day = Int.random(in: 1...monthData.days)
+                let formatted = provider.formatMonth(day: day, month: monthData.name)
+                currentDisplay = formatted.display
+                speakableContent = formatted.speakable
                 
             case .trainNumber:
-                // 火车号：TGV 6523 或 Intercités 4521
-                let trainTypes = ["TGV", "Intercités", "TER"]
-                let trainType = trainTypes.randomElement()!
+                let trainType = provider.trainTypes.randomElement()!
                 let number = Int.random(in: 1000...9999)
-                
                 currentDisplay = "\(trainType) \(number)"
-                // 语音：分开读，让数字更清晰
                 speakableContent = "\(trainType), \(number)"
                 
             case .flightNumber:
-                // 航班号：AF 1234 (法航), EK 73 (阿联酋航空)
-                let airlines = [
-                    ("AF", "Air France"),      // 法国航空
-                    ("EK", "Emirates"),        // 阿联酋航空
-                    ("BA", "British Airways"), // 英国航空
-                    ("LH", "Lufthansa"),       // 汉莎航空
-                    ("KL", "KLM")              // 荷兰皇家航空
-                ]
-                let airline = airlines.randomElement()!
+                let airline = provider.airlines.randomElement()!
                 let flightNum = Int.random(in: 10...9999)
-                
                 currentDisplay = "\(airline.0) \(flightNum)"
-                // 语音：逐字母读航空公司代码，然后读数字
                 let code = airline.0.map { String($0) }.joined(separator: ", ")
                 speakableContent = "\(code), \(flightNum)"
             }

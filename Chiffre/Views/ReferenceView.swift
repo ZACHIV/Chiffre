@@ -87,13 +87,14 @@ struct BorderlessNumberCell: View {
         Button {
             // 1. 发音逻辑
             if isInfinity {
-                // 特殊发音
-                SpeechManager.shared.speak("L'infini")
+                // 根据语言显示不同的无限表达
+                let infinityText = LanguageVoiceManager.currentLanguage == .french ? "L'infini" : "El infinito"
+                SpeechManager.shared.speak(infinityText)
             } else {
-                // 常规数字发音
+                // 常规数字发音 - 根据当前语言
                 let formatter = NumberFormatter()
                 formatter.numberStyle = .spellOut
-                formatter.locale = Locale(identifier: "fr-FR")
+                formatter.locale = Locale(identifier: LanguageVoiceManager.currentLanguage.localeIdentifier)
                 let text = formatter.string(from: NSNumber(value: number)) ?? "\(number)"
                 SpeechManager.shared.speak(text)
             }
