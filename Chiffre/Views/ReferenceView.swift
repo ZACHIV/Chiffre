@@ -37,7 +37,16 @@ struct ReferenceView: View {
                     .foregroundStyle(SurrealTheme.colors.deepIndigo)
                     .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
                     .padding(.top, 60)
-                    .padding(.bottom, 10)
+                    .padding(.bottom, 4)
+
+                // P2: 引导用户在 Écouter 中主动练习，而非停留在被动查阅
+                Text("被动参考 · 记住规则后请前往 Écouter 主动练习")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.4))
+                    .tracking(0.3)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 30)
+                    .padding(.bottom, 6)
                 
                 // 2. 滚动内容区
                 ScrollView(showsIndicators: false) {

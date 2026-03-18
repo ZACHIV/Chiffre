@@ -10,11 +10,18 @@ struct SpeakingPracticeView: View {
             
             VStack(spacing: 0) {
                 // 顶部标题
-                Text("Prononciation")
-                    .font(SurrealTheme.Typography.title(48))
-                    .foregroundStyle(SurrealTheme.colors.deepIndigo)
-                    .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
-                    .padding(.top, 60)
+                VStack(spacing: 4) {
+                    Text("Prononciation")
+                        .font(SurrealTheme.Typography.title(48))
+                        .foregroundStyle(SurrealTheme.colors.deepIndigo)
+                        .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
+                    // P2: 明确此模块训练发音（口语输出），与 Écouter 的听力理解是独立技能
+                    Text("口语发音练习 · 与听力理解是独立技能")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.4))
+                        .tracking(0.5)
+                }
+                .padding(.top, 60)
                 
                 Spacer()
                 

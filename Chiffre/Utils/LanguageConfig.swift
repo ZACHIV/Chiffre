@@ -172,11 +172,14 @@ protocol LanguageDataProvider {
     func formatPrice(euro: Int, cent: Int) -> (display: String, speakable: String)
     func formatTime(hour: Int, minute: Int) -> (display: String, speakable: String)
     func formatMonth(day: Int, month: String) -> (display: String, speakable: String)
-    
+    func sentenceTemplate(for mode: GameMode) -> String
+
     var successText: String { get }
     var listenText: String { get }
     var nextText: String { get }
     var revealText: String { get }
+    var inputPlaceholder: String { get }
+    var wrongAnswerPrefix: String { get }
     var appName: String { get }
 }
 
@@ -227,10 +230,26 @@ struct FrenchDataProvider: LanguageDataProvider {
         return (display, speakable)
     }
     
-    var successText: String { "C'est ça!" }
+    func sentenceTemplate(for mode: GameMode) -> String {
+        let templates: [GameMode: [String]] = [
+            .number:       ["Il y a {X} personnes.", "Chambre numéro {X}.", "Le code est le {X}.", "Composez le {X}."],
+            .phoneNumber:  ["Appelez le {X}.", "Son numéro est le {X}.", "Enregistrez le {X}."],
+            .price:        ["Ça fait {X}, s'il vous plaît.", "Le ticket coûte {X}.", "Votre total est de {X}."],
+            .time:         ["Le prochain train part à {X}.", "Le rendez-vous est à {X}.", "Le film commence à {X}."],
+            .year:         ["Il est né en {X}.", "Ça s'est passé en {X}.", "Cette œuvre date de {X}."],
+            .month:        ["La réunion est prévue {X}.", "Nous partons {X}.", "Le colis arrive {X}."],
+            .trainNumber:  ["Votre train est le {X}.", "Prenez le {X}, quai cinq.", "Le {X} est retardé."],
+            .flightNumber: ["Votre vol est le {X}.", "L'embarquement du vol {X} commence.", "Le vol {X} est annoncé."],
+        ]
+        return templates[mode]?.randomElement() ?? "{X}"
+    }
+
+    var successText: String { "Correct !" }
     var listenText: String { "Écoutez..." }
     var nextText: String { "Suivant" }
-    var revealText: String { "Révéler" }
+    var revealText: String { "Vérifier" }
+    var inputPlaceholder: String { "Tapez ce que vous avez entendu..." }
+    var wrongAnswerPrefix: String { "Vous avez tapé :" }
     var appName: String { "Chiffre" }
 }
 
@@ -287,9 +306,25 @@ struct SpanishDataProvider: LanguageDataProvider {
         return (display, speakable)
     }
     
-    var successText: String { "¡Eso es!" }
+    func sentenceTemplate(for mode: GameMode) -> String {
+        let templates: [GameMode: [String]] = [
+            .number:       ["Hay {X} personas.", "Habitación número {X}.", "El código es el {X}."],
+            .phoneNumber:  ["Llame al {X}.", "Su número es el {X}.", "Anote el {X}."],
+            .price:        ["Son {X}, por favor.", "El billete cuesta {X}.", "El total es {X}."],
+            .time:         ["El tren sale a las {X}.", "La cita es a las {X}.", "La película empieza a las {X}."],
+            .year:         ["Nació en {X}.", "Ocurrió en {X}.", "Esta obra es de {X}."],
+            .month:        ["La reunión es {X}.", "Salimos {X}.", "El paquete llega {X}."],
+            .trainNumber:  ["Su tren es el {X}.", "Tome el {X} en el andén cinco.", "El {X} lleva retraso."],
+            .flightNumber: ["Su vuelo es el {X}.", "El embarque del vuelo {X} ha comenzado.", "Anuncian el vuelo {X}."],
+        ]
+        return templates[mode]?.randomElement() ?? "{X}"
+    }
+
+    var successText: String { "¡Correcto!" }
     var listenText: String { "Escucha..." }
     var nextText: String { "Siguiente" }
-    var revealText: String { "Revelar" }
+    var revealText: String { "Verificar" }
+    var inputPlaceholder: String { "Escriba lo que ha escuchado..." }
+    var wrongAnswerPrefix: String { "Usted escribió:" }
     var appName: String { "Cifra" }
 }
