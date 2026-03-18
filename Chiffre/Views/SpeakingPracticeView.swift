@@ -2,7 +2,12 @@ import SwiftUI
 
 struct SpeakingPracticeView: View {
     @StateObject private var trainer = SpeakingTrainer()
+    @ObservedObject private var lm = LanguageVoiceManager.shared
     @State private var borderRotation: Double = 0  // 边框动画
+
+    private var dp: LanguageDataProvider {
+        lm.currentLanguage == .french ? FrenchDataProvider() : SpanishDataProvider()
+    }
     
     var body: some View {
         ZStack {
@@ -67,7 +72,7 @@ struct SpeakingPracticeView: View {
                             
                             HStack(spacing: 6) {
                                 Image(systemName: "speaker.wave.2.fill")
-                                Text("Toucher pour écouter")
+                                Text(dp.speakTapHint)
                             }
                             .font(.caption)
                             .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.5))
@@ -130,8 +135,8 @@ struct SpeakingPracticeView: View {
                             .font(.system(size: 16, weight: .medium))
                             .foregroundStyle(trainer.showFrenchText ? SurrealTheme.colors.coral : SurrealTheme.colors.deepIndigo)
                             .contentTransition(.symbolEffect(.replace.downUp))
-                        
-                        Text(trainer.showFrenchText ? "Masquer le texte" : "Afficher le texte")
+
+                        Text(trainer.showFrenchText ? dp.hideTextLabel : dp.showTextLabel)
                             .font(SurrealTheme.Typography.body(16))
                             .foregroundStyle(SurrealTheme.colors.deepIndigo)
                     }
@@ -208,7 +213,7 @@ struct SpeakingPracticeView: View {
                             VStack(spacing: 4) {
                                 Image(systemName: "arrow.right")
                                     .font(.system(size: 24, weight: .light))
-                                Text("Passer")
+                                Text(dp.skipLabel)
                                     .font(.system(size: 12, weight: .medium))
                             }
                             .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.5))
@@ -288,10 +293,10 @@ struct SpeakingPracticeView: View {
     
     var statusMessage: String {
         switch trainer.status {
-        case .idle: return "Appuyez pour parler"
-        case .listening: return "Je vous écoute..."
-        case .correct: return "Parfait !"
-        case .wrong: return "Essayez encore"
+        case .idle:      return dp.speakIdlePrompt
+        case .listening: return dp.speakListeningPrompt
+        case .correct:   return dp.speakCorrectPrompt
+        case .wrong:     return dp.speakWrongPrompt
         }
     }
 }

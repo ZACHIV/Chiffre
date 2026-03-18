@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ChiffreHomeView: View {
     @StateObject private var trainer = NumberTrainer()
+    @ObservedObject private var lm = LanguageVoiceManager.shared
     @State private var showSettings = false
     @State private var borderRotation: Double = 0
     @FocusState private var isInputFocused: Bool
@@ -11,12 +12,26 @@ struct ChiffreHomeView: View {
             SurrealTheme.mainBackground
 
             VStack(spacing: 0) {
-                // 1. 标题
-                Text(trainer.dataProvider.appName)
-                    .font(SurrealTheme.Typography.title(48))
-                    .foregroundStyle(SurrealTheme.colors.deepIndigo)
-                    .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
-                    .padding(.top, 60)
+                // 1. 标题 + 语言徽标
+                VStack(spacing: 6) {
+                    Text(trainer.dataProvider.appName)
+                        .font(SurrealTheme.Typography.title(48))
+                        .foregroundStyle(SurrealTheme.colors.deepIndigo)
+                        .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
+                        .contentTransition(.opacity)
+                        .id(lm.currentLanguage)  // 语言切换时触发过渡动画
+
+                    Text(lm.currentLanguage.icon + " " + lm.currentLanguage.displayName)
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.5))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 4)
+                        .background(SurrealTheme.colors.deepIndigo.opacity(0.06))
+                        .clipShape(Capsule())
+                        .contentTransition(.opacity)
+                        .id("lang-\(lm.currentLanguage)")
+                }
+                .padding(.top, 60)
 
                 // 2. HUD：分数 / 连对火焰 / 语速
                 hudView

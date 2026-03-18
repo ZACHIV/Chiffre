@@ -1,5 +1,6 @@
 import AVFoundation
 import SwiftUI
+import Combine
 
 // MARK: - 支持的语言
 enum AppLanguage: String, CaseIterable, Identifiable {
@@ -112,53 +113,42 @@ enum SpanishVoice: String, CaseIterable, Identifiable, LanguageVoice {
     }
 }
 
-// MARK: - 语言语音管理器
-class LanguageVoiceManager {
-    static var currentLanguage: AppLanguage {
-        get {
-            let rawValue = UserDefaults.standard.string(forKey: "appLanguage") ?? AppLanguage.french.rawValue
-            return AppLanguage(rawValue: rawValue) ?? .french
-        }
-        set {
-            UserDefaults.standard.set(newValue.rawValue, forKey: "appLanguage")
-        }
+// MARK: - 语言语音管理器 (ObservableObject 单例，确保语言切换即时刷新所有视图)
+class LanguageVoiceManager: ObservableObject {
+    static let shared = LanguageVoiceManager()
+
+    @Published var currentLanguage: AppLanguage {
+        didSet { UserDefaults.standard.set(currentLanguage.rawValue, forKey: "appLanguage") }
     }
-    
-    static var selectedFrenchVoice: FrenchVoice {
-        get {
-            let rawValue = UserDefaults.standard.string(forKey: "selectedFrenchVoice") ?? FrenchVoice.amelie.rawValue
-            return FrenchVoice(rawValue: rawValue) ?? .amelie
-        }
-        set {
-            UserDefaults.standard.set(newValue.rawValue, forKey: "selectedFrenchVoice")
-        }
+    @Published var selectedFrenchVoice: FrenchVoice {
+        didSet { UserDefaults.standard.set(selectedFrenchVoice.rawValue, forKey: "selectedFrenchVoice") }
     }
-    
-    static var selectedSpanishVoice: SpanishVoice {
-        get {
-            let rawValue = UserDefaults.standard.string(forKey: "selectedSpanishVoice") ?? SpanishVoice.monica.rawValue
-            return SpanishVoice(rawValue: rawValue) ?? .monica
-        }
-        set {
-            UserDefaults.standard.set(newValue.rawValue, forKey: "selectedSpanishVoice")
-        }
+    @Published var selectedSpanishVoice: SpanishVoice {
+        didSet { UserDefaults.standard.set(selectedSpanishVoice.rawValue, forKey: "selectedSpanishVoice") }
     }
-    
-    static func getCurrentVoice() -> AVSpeechSynthesisVoice? {
+
+    private init() {
+        let langRaw = UserDefaults.standard.string(forKey: "appLanguage") ?? AppLanguage.french.rawValue
+        currentLanguage = AppLanguage(rawValue: langRaw) ?? .french
+
+        let frRaw = UserDefaults.standard.string(forKey: "selectedFrenchVoice") ?? FrenchVoice.amelie.rawValue
+        selectedFrenchVoice = FrenchVoice(rawValue: frRaw) ?? .amelie
+
+        let esRaw = UserDefaults.standard.string(forKey: "selectedSpanishVoice") ?? SpanishVoice.monica.rawValue
+        selectedSpanishVoice = SpanishVoice(rawValue: esRaw) ?? .monica
+    }
+
+    func getCurrentVoice() -> AVSpeechSynthesisVoice? {
         switch currentLanguage {
-        case .french:
-            return selectedFrenchVoice.getVoice()
-        case .spanish:
-            return selectedSpanishVoice.getVoice()
+        case .french:  return selectedFrenchVoice.getVoice()
+        case .spanish: return selectedSpanishVoice.getVoice()
         }
     }
-    
-    static func getTestPhrase() -> String {
+
+    func getTestPhrase() -> String {
         switch currentLanguage {
-        case .french:
-            return "Bonjour, comment allez-vous?"
-        case .spanish:
-            return "Hola, ¿cómo estás?"
+        case .french:  return "Bonjour, comment allez-vous?"
+        case .spanish: return "Hola, ¿cómo estás?"
         }
     }
 }
@@ -181,6 +171,15 @@ protocol LanguageDataProvider {
     var inputPlaceholder: String { get }
     var wrongAnswerPrefix: String { get }
     var appName: String { get }
+    // 口语练习界面
+    var speakTapHint: String { get }
+    var speakIdlePrompt: String { get }
+    var speakListeningPrompt: String { get }
+    var speakCorrectPrompt: String { get }
+    var speakWrongPrompt: String { get }
+    var showTextLabel: String { get }
+    var hideTextLabel: String { get }
+    var skipLabel: String { get }
 }
 
 // MARK: - 法语数据提供者
@@ -251,6 +250,14 @@ struct FrenchDataProvider: LanguageDataProvider {
     var inputPlaceholder: String { "Tapez ce que vous avez entendu..." }
     var wrongAnswerPrefix: String { "Vous avez tapé :" }
     var appName: String { "Chiffre" }
+    var speakTapHint: String { "Toucher pour écouter" }
+    var speakIdlePrompt: String { "Appuyez pour parler" }
+    var speakListeningPrompt: String { "Je vous écoute..." }
+    var speakCorrectPrompt: String { "Parfait !" }
+    var speakWrongPrompt: String { "Essayez encore" }
+    var showTextLabel: String { "Afficher le texte" }
+    var hideTextLabel: String { "Masquer le texte" }
+    var skipLabel: String { "Passer" }
 }
 
 // MARK: - 西班牙语数据提供者
@@ -327,4 +334,12 @@ struct SpanishDataProvider: LanguageDataProvider {
     var inputPlaceholder: String { "Escriba lo que ha escuchado..." }
     var wrongAnswerPrefix: String { "Usted escribió:" }
     var appName: String { "Cifra" }
+    var speakTapHint: String { "Toca para escuchar" }
+    var speakIdlePrompt: String { "Pulsa para hablar" }
+    var speakListeningPrompt: String { "Te escucho..." }
+    var speakCorrectPrompt: String { "¡Perfecto!" }
+    var speakWrongPrompt: String { "Inténtalo de nuevo" }
+    var showTextLabel: String { "Mostrar texto" }
+    var hideTextLabel: String { "Ocultar texto" }
+    var skipLabel: String { "Saltar" }
 }

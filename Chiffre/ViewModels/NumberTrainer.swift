@@ -53,8 +53,10 @@ class NumberTrainer: ObservableObject {
     private(set) var speakableContent: String = ""
     private(set) var sentenceContext: String = ""
 
+    private var cancellables = Set<AnyCancellable>()
+
     var dataProvider: LanguageDataProvider {
-        switch LanguageVoiceManager.currentLanguage {
+        switch LanguageVoiceManager.shared.currentLanguage {
         case .french:  return FrenchDataProvider()
         case .spanish: return SpanishDataProvider()
         }
@@ -104,6 +106,15 @@ class NumberTrainer: ObservableObject {
 
     init() {
         generateNew(speakNow: false)
+
+        // 语言切换时自动刷新题目
+        LanguageVoiceManager.shared.$currentLanguage
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.generateNew(speakNow: false)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - 生成新题目

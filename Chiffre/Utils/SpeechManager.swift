@@ -23,7 +23,7 @@ class SpeechManager: NSObject {
         }
 
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = LanguageVoiceManager.getCurrentVoice()
+        utterance.voice = LanguageVoiceManager.shared.getCurrentVoice()
         utterance.rate = rate
         utterance.volume = 1.0
 

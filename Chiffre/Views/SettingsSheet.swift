@@ -172,18 +172,20 @@ struct PresetButton: View {
 
 // MARK: - 语音选择组件
 struct VoiceSelectionSection: View {
+    @ObservedObject private var lm = LanguageVoiceManager.shared
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Voix (语音)")
                     .font(SurrealTheme.Typography.header(16))
                     .foregroundStyle(.secondary)
-                
+
                 Spacer()
-                
+
                 // 试听按钮
                 Button {
-                    SpeechManager.shared.speak(LanguageVoiceManager.getTestPhrase())
+                    SpeechManager.shared.speak(lm.getTestPhrase())
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "speaker.wave.2.fill")
@@ -198,9 +200,9 @@ struct VoiceSelectionSection: View {
                 }
             }
             .padding(.horizontal, 30)
-            
+
             // 根据当前语言显示对应的语音选择
-            if LanguageVoiceManager.currentLanguage == .french {
+            if lm.currentLanguage == .french {
                 FrenchVoiceSelection()
             } else {
                 SpanishVoiceSelection()
@@ -210,15 +212,17 @@ struct VoiceSelectionSection: View {
 }
 
 struct FrenchVoiceSelection: View {
+    @ObservedObject private var lm = LanguageVoiceManager.shared
+
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
                 ForEach(FrenchVoice.allCases) { voice in
                     VoiceCapsule(
                         voice: voice,
-                        isSelected: LanguageVoiceManager.selectedFrenchVoice == voice
+                        isSelected: lm.selectedFrenchVoice == voice
                     ) {
-                        LanguageVoiceManager.selectedFrenchVoice = voice
+                        lm.selectedFrenchVoice = voice
                         SpeechManager.shared.speak("Bonjour, je m'appelle \(voice.rawValue)")
                     }
                 }
@@ -229,15 +233,17 @@ struct FrenchVoiceSelection: View {
 }
 
 struct SpanishVoiceSelection: View {
+    @ObservedObject private var lm = LanguageVoiceManager.shared
+
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
                 ForEach(SpanishVoice.allCases) { voice in
                     VoiceCapsule(
                         voice: voice,
-                        isSelected: LanguageVoiceManager.selectedSpanishVoice == voice
+                        isSelected: lm.selectedSpanishVoice == voice
                     ) {
-                        LanguageVoiceManager.selectedSpanishVoice = voice
+                        lm.selectedSpanishVoice = voice
                         SpeechManager.shared.speak("Hola, me llamo \(voice.rawValue)")
                     }
                 }
@@ -247,24 +253,27 @@ struct SpanishVoiceSelection: View {
     }
 }
 
-// MARK: - 语言选择组件 (新增)
+// MARK: - 语言选择组件
 struct LanguageSelectionSection: View {
+    @ObservedObject private var lm = LanguageVoiceManager.shared
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Langue (语言)")
                 .font(SurrealTheme.Typography.header(16))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 30)
-            
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(AppLanguage.allCases) { language in
                         LanguageCapsule(
                             language: language,
-                            isSelected: LanguageVoiceManager.currentLanguage == language
+                            isSelected: lm.currentLanguage == language
                         ) {
-                            LanguageVoiceManager.currentLanguage = language
-                            // 切换语言后试听
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                                lm.currentLanguage = language
+                            }
                             testLanguage(language)
                         }
                     }
@@ -273,14 +282,12 @@ struct LanguageSelectionSection: View {
             }
         }
     }
-    
+
     private func testLanguage(_ language: AppLanguage) {
         let phrase: String
         switch language {
-        case .french:
-            phrase = "Français sélectionné"
-        case .spanish:
-            phrase = "Español seleccionado"
+        case .french:  phrase = "Français sélectionné"
+        case .spanish: phrase = "Español seleccionado"
         }
         SpeechManager.shared.speak(phrase)
     }

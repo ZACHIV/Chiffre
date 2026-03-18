@@ -18,7 +18,7 @@ class SpeechRecognizer: ObservableObject {
     
     // 动态获取当前语言的语音识别器
     private var speechRecognizer: SFSpeechRecognizer? {
-        let locale = LanguageVoiceManager.currentLanguage.localeIdentifier
+        let locale = LanguageVoiceManager.shared.currentLanguage.localeIdentifier
         return SFSpeechRecognizer(locale: Locale(identifier: locale))
     }
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?

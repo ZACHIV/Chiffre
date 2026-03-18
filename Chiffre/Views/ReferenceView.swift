@@ -97,13 +97,13 @@ struct BorderlessNumberCell: View {
             // 1. 发音逻辑
             if isInfinity {
                 // 根据语言显示不同的无限表达
-                let infinityText = LanguageVoiceManager.currentLanguage == .french ? "L'infini" : "El infinito"
+                let infinityText = LanguageVoiceManager.shared.currentLanguage == .french ? "L'infini" : "El infinito"
                 SpeechManager.shared.speak(infinityText)
             } else {
                 // 常规数字发音 - 根据当前语言
                 let formatter = NumberFormatter()
                 formatter.numberStyle = .spellOut
-                formatter.locale = Locale(identifier: LanguageVoiceManager.currentLanguage.localeIdentifier)
+                formatter.locale = Locale(identifier: LanguageVoiceManager.shared.currentLanguage.localeIdentifier)
                 let text = formatter.string(from: NSNumber(value: number)) ?? "\(number)"
                 SpeechManager.shared.speak(text)
             }

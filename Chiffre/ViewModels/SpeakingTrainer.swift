@@ -25,20 +25,20 @@ class SpeakingTrainer: ObservableObject {
     private var formatter: NumberFormatter {
         let f = NumberFormatter()
         f.numberStyle = .spellOut
-        f.locale = Locale(identifier: LanguageVoiceManager.currentLanguage.localeIdentifier)
+        f.locale = Locale(identifier: LanguageVoiceManager.shared.currentLanguage.localeIdentifier)
         return f
     }
     
     init() {
         generateNew()
-        
+
         recognizer.$transcript
             .debounce(for: .milliseconds(600), scheduler: RunLoop.main) // 稍微增加防抖时间，等待用户说完
             .sink { [weak self] text in
                 self?.verify(text)
             }
             .store(in: &cancellables)
-        
+
         recognizer.$isRecording
             .sink { [weak self] isRec in
                 if isRec {
@@ -50,6 +50,15 @@ class SpeakingTrainer: ObservableObject {
                         self?.status = .idle
                     }
                 }
+            }
+            .store(in: &cancellables)
+
+        // 语言切换时自动刷新题目
+        LanguageVoiceManager.shared.$currentLanguage
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.generateNew()
             }
             .store(in: &cancellables)
     }
