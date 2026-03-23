@@ -55,6 +55,7 @@ class NumberTrainer: ObservableObject {
     @Published var hintStage: HintStage = .none
     @Published var hintMessage: String = ""
     @Published var hintVisual: String = ""
+    @Published var revealedHintDigits: Int = 0
 
     // 会话统计（P1: 错误跟踪）
     @Published var sessionCorrect: Int = 0
@@ -63,6 +64,7 @@ class NumberTrainer: ObservableObject {
 
     @AppStorage("gameMode") var mode: GameMode = .number
     @AppStorage("maxRange") var maxRange: Int = 100
+    @AppStorage("listeningPlaybackRate") var playbackRate: Double = 0.56
 
     private(set) var speakableContent: String = ""
     private(set) var sentenceContext: String = ""
@@ -76,32 +78,25 @@ class NumberTrainer: ObservableObject {
         }
     }
 
-    // MARK: - 自适应语速（P0: 根据连对数提速）
-    // 0-2连对: 0.42慢速 → 3-6: 0.47中速 → 7-11: 0.52较快 → 12+: 0.57接近自然语速
     var currentRate: Float {
-        switch currentStreak {
-        case 0..<3:  return 0.42
-        case 3..<7:  return 0.47
-        case 7..<12: return 0.52
-        default:     return 0.57
-        }
+        Float(playbackRate)
     }
 
     var speedLevel: Int {
-        switch currentStreak {
-        case 0..<3:  return 1
-        case 3..<7:  return 2
-        case 7..<12: return 3
-        default:     return 4
+        switch playbackRate {
+        case ..<0.45: return 1
+        case ..<0.53: return 2
+        case ..<0.61: return 3
+        default: return 4
         }
     }
 
     var speedLabel: String {
-        switch currentStreak {
-        case 0..<3:  return "慢速"
-        case 3..<7:  return "中速"
-        case 7..<12: return "较快"
-        default:     return "自然"
+        switch playbackRate {
+        case ..<0.45: return "慢速"
+        case ..<0.53: return "适中"
+        case ..<0.61: return "较快"
+        default: return "自然"
         }
     }
 
@@ -117,16 +112,18 @@ class NumberTrainer: ObservableObject {
         dataProvider.structureHint(for: mode)
     }
 
-    var hintActionText: String {
-        switch hintStage {
-        case .none:           return dataProvider.hintStartText
-        case .replayFull:     return dataProvider.hintFocusReplayText
-        case .replayFocused:  return dataProvider.hintStructureText
-        case .structure:      return dataProvider.hintScaffoldText
-        case .scaffold:       return dataProvider.hintPartialRevealText
-        case .partialReveal:  return dataProvider.hintShowAnswerText
-        case .fullReveal:     return dataProvider.hintDoneText
+    var revealAnnotation: String {
+        if let spelled = spelledOutDisplay {
+            return spelled
         }
+
+        return speakableContent
+            .replacingOccurrences(of: ",", with: " ·")
+            .replacingOccurrences(of: "  ", with: " ")
+    }
+
+    var hintActionText: String {
+        "提示一位"
     }
 
     // 给 SettingsSheet 中的键盘类型提示
@@ -159,6 +156,7 @@ class NumberTrainer: ObservableObject {
             hintStage = .none
             hintMessage = ""
             hintVisual = ""
+            revealedHintDigits = 0
             let provider = dataProvider
 
             switch mode {
@@ -237,81 +235,32 @@ class NumberTrainer: ObservableObject {
     }
 
     func replaySlow() {
-        let slowRate = max(0.33, currentRate - 0.1)
+        let slowRate = max(0.36, currentRate - 0.1)
         SpeechManager.shared.speak(sentenceContext, rate: slowRate)
     }
 
     // MARK: - 渐进提示（P1）
     func requestHint() {
         guard answerState == .waiting else { return }
+        let totalDigits = currentDisplay.filter(\.isNumber).count
+        guard totalDigits > 0 else { return }
 
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            switch hintStage {
-            case .none:
-                hintStage = .replayFull
-                hintMessage = dataProvider.hintReplayFullMessage
-                replayFull()
-
-            case .replayFull:
-                hintStage = .replayFocused
-                hintMessage = dataProvider.hintReplayFocusedMessage
-                replayFocused()
-
-            case .replayFocused:
-                hintStage = .structure
-                hintMessage = structureHintText
-
-            case .structure:
-                hintStage = .scaffold
-                hintMessage = dataProvider.hintScaffoldMessage
-                hintVisual = buildScaffold()
-
-            case .scaffold:
-                hintStage = .partialReveal
-                hintMessage = dataProvider.hintPartialRevealMessage
-                hintVisual = buildPartialReveal()
-
-            case .partialReveal:
-                hintStage = .fullReveal
-                hintMessage = dataProvider.hintShowAnswerMessage
-                answerState = .revealed
-
-            case .fullReveal:
-                break
-            }
+            revealedHintDigits = min(totalDigits, revealedHintDigits + 1)
+            hintStage = revealedHintDigits >= totalDigits ? .fullReveal : .partialReveal
+            hintMessage = "已显示 \(revealedHintDigits) 位数字"
+            hintVisual = buildDigitRevealHint()
         }
     }
 
     // MARK: - 验证答案
     func verify() {
-        // 没有输入时不直接揭晓，先引导继续听
-        guard canVerify else {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                if hintStage == .none {
-                    hintStage = .replayFull
-                }
-                hintMessage = dataProvider.emptyInputPrompt
-            }
-            replayFull()
-            return
-        }
-
-        let isCorrect = checkAnswer(userInput, against: currentDisplay)
-
         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-            if isCorrect {
-                answerState = .correct
-                sessionCorrect += 1
-                currentStreak += 1
-            } else {
-                answerState = .wrong
-                currentStreak = 0
-            }
-            sessionTotal += 1
+            answerState = .revealed
         }
 
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(isCorrect ? .success : .warning)
+        let generator = UIImpactFeedbackGenerator(style: .soft)
+        generator.impactOccurred()
     }
 
     // MARK: - 答案比对（宽松匹配）
@@ -349,6 +298,32 @@ class NumberTrainer: ObservableObject {
         r = r.components(separatedBy: .whitespaces).filter { !$0.isEmpty }.joined(separator: " ")
 
         return r
+    }
+
+    private func buildDigitRevealHint() -> String {
+        var visibleDigits = revealedHintDigits
+        return String(currentDisplay.map { char in
+            guard char.isNumber else { return char }
+            if visibleDigits > 0 {
+                visibleDigits -= 1
+                return char
+            }
+            return "•"
+        })
+    }
+
+    private var spelledOutDisplay: String? {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .spellOut
+        formatter.locale = Locale(identifier: LanguageVoiceManager.shared.currentLanguage.localeIdentifier)
+
+        switch mode {
+        case .number, .year:
+            guard let value = Int(currentDisplay) else { return nil }
+            return formatter.string(from: NSNumber(value: value))
+        default:
+            return nil
+        }
     }
 
     // MARK: - 视觉支架

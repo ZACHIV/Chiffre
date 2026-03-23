@@ -3,10 +3,10 @@ import SwiftUI
 enum ListeningCanvasTheme {
     static var background: some View { SurrealTheme.mainBackground }
 
-    static let canvasFill = Color.white.opacity(0.12)
-    static let canvasStroke = Color.white.opacity(0.28)
-    static let panelFill = Color.white.opacity(0.1)
-    static let panelStroke = SurrealTheme.colors.deepIndigo.opacity(0.12)
+    static let canvasFill = Color.white.opacity(0.16)
+    static let canvasStroke = Color.white.opacity(0.34)
+    static let panelFill = Color.white.opacity(0.12)
+    static let panelStroke = SurrealTheme.colors.deepIndigo.opacity(0.1)
 
     static let title = SurrealTheme.colors.deepIndigo
     static let body = SurrealTheme.colors.deepIndigo.opacity(0.76)
@@ -20,9 +20,10 @@ enum ListeningCanvasTheme {
 
     static let stageGradient = LinearGradient(
         colors: [
-            SurrealTheme.colors.skyDawn.opacity(0.42),
-            SurrealTheme.colors.waterBlue.opacity(0.28),
-            SurrealTheme.colors.lavenderMist.opacity(0.38)
+            SurrealTheme.colors.skyDawn.opacity(0.46),
+            SurrealTheme.colors.lavenderMist.opacity(0.38),
+            SurrealTheme.colors.waterBlue.opacity(0.32),
+            Color.white.opacity(0.24)
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
@@ -31,16 +32,29 @@ enum ListeningCanvasTheme {
     static let primaryGradient = LinearGradient(
         colors: [
             SurrealTheme.colors.skyDawn,
-            SurrealTheme.colors.coral
+            SurrealTheme.colors.lavenderMist,
+            SurrealTheme.colors.coral,
+            Color(red: 1.0, green: 0.72, blue: 0.6)
         ],
         startPoint: .leading,
         endPoint: .trailing
     )
 
+    static let pillGradient = LinearGradient(
+        colors: [
+            Color.white.opacity(0.42),
+            SurrealTheme.colors.lavenderMist.opacity(0.24),
+            SurrealTheme.colors.skyDawn.opacity(0.18)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
     static let successGradient = LinearGradient(
         colors: [
             SurrealTheme.colors.lilyPad,
-            SurrealTheme.colors.waterBlue.opacity(0.8)
+            SurrealTheme.colors.waterBlue.opacity(0.8),
+            SurrealTheme.colors.lavenderMist.opacity(0.9)
         ],
         startPoint: .leading,
         endPoint: .trailing

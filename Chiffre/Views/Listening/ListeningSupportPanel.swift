@@ -1,9 +1,6 @@
 import SwiftUI
 
 struct ListeningSupportPanel: View {
-    @Binding var userInput: String
-    let placeholder: String
-    let keyboardType: UIKeyboardType
     let hasHintContent: Bool
     let hintMessage: String
     let hintVisual: String
@@ -16,85 +13,59 @@ struct ListeningSupportPanel: View {
     let replay: () -> Void
     let replayFocused: () -> Void
     let requestHint: () -> Void
-    let submit: () -> Void
-    @FocusState.Binding var isInputFocused: Bool
 
     var body: some View {
-        VStack(spacing: 14) {
-            if answerState == .waiting {
-                TextField(placeholder, text: $userInput)
-                    .focused($isInputFocused)
-                    .font(SurrealTheme.Typography.body(19))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(ListeningCanvasTheme.title)
-                    .keyboardType(keyboardType)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .fill(Color.white.opacity(0.34))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .stroke(ListeningCanvasTheme.panelStroke, lineWidth: 1)
-                    )
-                    .onSubmit(submit)
+        ImpressionistGlassCard(cornerRadius: 26) {
+            VStack(spacing: 14) {
+                if answerState == .waiting {
+                    if hasHintContent {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(hintMessage)
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundStyle(ListeningCanvasTheme.body)
 
-                if hasHintContent {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(hintMessage)
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            if !hintVisual.isEmpty {
+                                Text(hintVisual)
+                                    .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                                    .foregroundStyle(ListeningCanvasTheme.sunrise)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .fill(Color.white.opacity(0.2))
+                        )
+                    }
+
+                    HStack(spacing: 10) {
+                        SupportActionPill(title: "重听", icon: "speaker.wave.2.fill", tint: ListeningCanvasTheme.dawn, action: replay)
+                        SupportActionPill(title: "聚焦", icon: "waveform", tint: ListeningCanvasTheme.leaf, action: replayFocused)
+                        SupportActionPill(title: hintTitle, icon: "sparkles", tint: ListeningCanvasTheme.water, action: requestHint)
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: 10) {
+                        sentenceView
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundStyle(ListeningCanvasTheme.body)
+                            .multilineTextAlignment(.leading)
+                            .lineSpacing(3)
 
-                        if !hintVisual.isEmpty {
-                            Text(hintVisual)
-                                .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(ListeningCanvasTheme.sunrise)
+                        HStack(spacing: 8) {
+                            Image(systemName: feedbackIcon)
+                                .foregroundStyle(feedbackColor)
+                            Text(feedbackTitle)
+                                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                .foregroundStyle(ListeningCanvasTheme.secondary)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(Color.white.opacity(0.22))
-                    )
                 }
-
-                HStack(spacing: 10) {
-                    SupportActionPill(title: "重听", icon: "speaker.wave.2.fill", tint: ListeningCanvasTheme.dawn, action: replay)
-                    SupportActionPill(title: "聚焦", icon: "waveform", tint: ListeningCanvasTheme.leaf, action: replayFocused)
-                    SupportActionPill(title: hintTitle, icon: "sparkles", tint: ListeningCanvasTheme.water, action: requestHint)
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 8) {
-                        Image(systemName: feedbackIcon)
-                            .foregroundStyle(feedbackColor)
-                        Text(feedbackTitle)
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundStyle(ListeningCanvasTheme.title)
-                    }
-
-                    sentenceView
-                        .font(.system(size: 14, weight: .regular, design: .rounded))
-                        .foregroundStyle(ListeningCanvasTheme.body)
-                        .multilineTextAlignment(.leading)
-                        .lineSpacing(3)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 18)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 18)
-        .background(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(ListeningCanvasTheme.panelFill)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .stroke(ListeningCanvasTheme.panelStroke, lineWidth: 1)
-        )
     }
 }
 
@@ -118,7 +89,17 @@ struct SupportActionPill: View {
             .padding(.vertical, 11)
             .background(
                 Capsule()
-                    .fill(tint.opacity(0.28))
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.46),
+                                tint.opacity(0.22),
+                                ListeningCanvasTheme.mist.opacity(0.2)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
             )
             .overlay(
                 Capsule()
@@ -141,7 +122,9 @@ struct ListeningBottomActionRow: View {
             Button(action: settingsAction) {
                 ZStack {
                     Circle()
-                        .fill(Color.white.opacity(0.34))
+                        .fill(.ultraThinMaterial)
+                    Circle()
+                        .fill(Color.white.opacity(0.18))
                     Circle()
                         .stroke(ListeningCanvasTheme.panelStroke, lineWidth: 1)
                     Image(systemName: "slider.horizontal.3")
@@ -166,6 +149,10 @@ struct ListeningBottomActionRow: View {
                 .background(primaryGradient)
                 .clipShape(Capsule())
                 .shadow(color: ListeningCanvasTheme.sunrise.opacity(0.32), radius: 18, y: 10)
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                )
             }
             .buttonStyle(.plain)
         }

@@ -4,6 +4,7 @@ struct ListeningStageView: View {
     let mode: GameMode
     let answerState: AnswerState
     let currentDisplay: String
+    let annotation: String
     let footnote: String
     let accent: Color
     let textColor: Color
@@ -13,28 +14,13 @@ struct ListeningStageView: View {
 
     var body: some View {
         Button(action: replay) {
-            ZStack {
-                RoundedRectangle(cornerRadius: metrics.stageCornerRadius, style: .continuous)
-                    .fill(ListeningCanvasTheme.stageGradient)
-                    .background(
-                        RoundedRectangle(cornerRadius: metrics.stageCornerRadius, style: .continuous)
-                            .fill(ListeningCanvasTheme.canvasFill)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: metrics.stageCornerRadius, style: .continuous)
-                            .stroke(borderColor.opacity(0.72), lineWidth: 1.2)
-                    )
-                    .shadow(color: borderColor.opacity(0.18), radius: 24, y: 14)
-
+            ImpressionistGlassCard(cornerRadius: metrics.stageCornerRadius) {
                 stageBrushwork
 
                 VStack(alignment: .leading, spacing: 18) {
                     HStack {
                         ListeningModeBadge(mode: mode)
                         Spacer()
-                        Text("轻点画布可重听")
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
-                            .foregroundStyle(ListeningCanvasTheme.secondary)
                     }
 
                     Spacer(minLength: 0)
@@ -43,12 +29,29 @@ struct ListeningStageView: View {
                         if answerState == .waiting {
                             ListeningSunriseGlyph(accent: accent)
                         } else {
-                            Text(currentDisplay)
-                                .font(stageFont(for: currentDisplay))
-                                .foregroundStyle(textColor)
-                                .multilineTextAlignment(.center)
-                                .minimumScaleFactor(0.42)
-                                .lineLimit(2)
+                            VStack(spacing: 14) {
+                                Text(currentDisplay)
+                                    .font(stageFont(for: currentDisplay))
+                                    .foregroundStyle(textColor)
+                                    .multilineTextAlignment(.center)
+                                    .minimumScaleFactor(0.42)
+                                    .lineLimit(2)
+
+                                Text(annotation)
+                                    .font(.system(size: 16, weight: .semibold, design: .serif))
+                                    .foregroundStyle(ListeningCanvasTheme.sunrise)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 18)
+                                    .padding(.vertical, 10)
+                                    .background(
+                                        Capsule()
+                                            .fill(Color.white.opacity(0.28))
+                                    )
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(ListeningCanvasTheme.dawn.opacity(0.4), lineWidth: 1)
+                                    )
+                            }
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -108,7 +111,7 @@ struct ListeningModeBadge: View {
         .padding(.vertical, 7)
         .background(
             Capsule()
-                .fill(Color.white.opacity(0.46))
+                .fill(ListeningCanvasTheme.pillGradient)
         )
         .overlay(
             Capsule()

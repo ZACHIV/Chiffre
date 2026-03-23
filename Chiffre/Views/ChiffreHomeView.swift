@@ -4,7 +4,6 @@ struct ChiffreHomeView: View {
     @StateObject private var trainer = NumberTrainer()
     @ObservedObject private var lm = LanguageVoiceManager.shared
     @State private var showSettings = false
-    @FocusState private var isInputFocused: Bool
 
     var body: some View {
         GeometryReader { proxy in
@@ -20,6 +19,7 @@ struct ChiffreHomeView: View {
                         mode: trainer.mode,
                         answerState: trainer.answerState,
                         currentDisplay: trainer.currentDisplay,
+                        annotation: trainer.revealAnnotation,
                         footnote: stageFootnote,
                         accent: accentColor,
                         textColor: answerTextColor,
@@ -29,9 +29,6 @@ struct ChiffreHomeView: View {
                     )
 
                     ListeningSupportPanel(
-                        userInput: $trainer.userInput,
-                        placeholder: trainer.dataProvider.inputPlaceholder,
-                        keyboardType: trainer.preferredKeyboardType,
                         hasHintContent: trainer.hasHintContent,
                         hintMessage: trainer.hintMessage,
                         hintVisual: trainer.hintVisual,
@@ -43,9 +40,7 @@ struct ChiffreHomeView: View {
                         hintTitle: compactHintTitle,
                         replay: trainer.replayFull,
                         replayFocused: trainer.replayFocused,
-                        requestHint: trainer.requestHint,
-                        submit: trainer.verify,
-                        isInputFocused: $isInputFocused
+                        requestHint: trainer.requestHint
                     )
 
                     Spacer(minLength: 0)
@@ -63,12 +58,6 @@ struct ChiffreHomeView: View {
                 .padding(.bottom, metrics.bottomPadding)
             }
         }
-        .onAppear {
-            isInputFocused = trainer.answerState == .waiting
-        }
-        .onChange(of: trainer.answerState) { _, state in
-            isInputFocused = state == .waiting
-        }
         .sheet(isPresented: $showSettings) {
             SettingsSheet(trainer: trainer)
                 .presentationDetents([.height(520)])
@@ -77,47 +66,49 @@ struct ChiffreHomeView: View {
     }
 
     private func header(metrics: ListeningCanvasTheme.Metrics) -> some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(trainer.dataProvider.appName)
-                    .font(SurrealTheme.Typography.title(metrics.brandSize))
-                    .foregroundStyle(ListeningCanvasTheme.title)
-                    .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
-                    .contentTransition(.opacity)
-                    .id(lm.currentLanguage)
-
-                Text(lm.currentLanguage.icon + " " + lm.currentLanguage.displayName)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Menu {
+                    ForEach(AppLanguage.allCases) { language in
+                        Button(language.icon + " " + language.displayName) {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                                lm.currentLanguage = language
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(lm.currentLanguage.icon)
+                        Text(lm.currentLanguage.displayName)
+                            .lineLimit(1)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10, weight: .bold))
+                    }
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .foregroundStyle(ListeningCanvasTheme.body)
                     .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 7)
                     .background(
                         Capsule()
-                            .fill(Color.white.opacity(0.28))
+                            .fill(ListeningCanvasTheme.pillGradient)
                     )
                     .overlay(
                         Capsule()
                             .stroke(ListeningCanvasTheme.panelStroke, lineWidth: 1)
                     )
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 6) {
-                Text(scoreText)
-                    .font(.system(size: 21, weight: .bold, design: .rounded).monospacedDigit())
-                    .foregroundStyle(ListeningCanvasTheme.title)
-
-                Text("速度 \(trainer.speedLabel)")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundStyle(ListeningCanvasTheme.secondary)
-
-                if trainer.currentStreak > 0 {
-                    Text("连对 \(trainer.currentStreak)")
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundStyle(ListeningCanvasTheme.sunrise)
                 }
+                .buttonStyle(.plain)
+
+                Spacer()
             }
+
+            Text(trainer.dataProvider.appName)
+                .font(SurrealTheme.Typography.title(metrics.brandSize))
+                .foregroundStyle(ListeningCanvasTheme.title)
+                .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
+                .contentTransition(.opacity)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .id(lm.currentLanguage)
         }
     }
 
@@ -136,8 +127,8 @@ struct ChiffreHomeView: View {
 
     private var stageFootnote: String {
         switch trainer.answerState {
-        case .waiting: return "完整语境播放，点击画布可再听一遍"
-        case .revealed: return "答案已揭晓，继续下一题"
+        case .waiting: return "先听，再写；点验证就直接揭晓。"
+        case .revealed: return "数字已展开，继续下一题。"
         case .correct: return trainer.dataProvider.successText
         case .wrong: return trainer.dataProvider.gentleWrongText
         }
@@ -162,19 +153,7 @@ struct ChiffreHomeView: View {
     }
 
     private var compactHintTitle: String {
-        switch trainer.hintStage {
-        case .none: return "提示"
-        case .replayFull: return "聚焦"
-        case .replayFocused: return "结构"
-        case .structure: return "支架"
-        case .scaffold: return "半揭晓"
-        case .partialReveal: return "答案"
-        case .fullReveal: return "完成"
-        }
-    }
-
-    private var scoreText: String {
-        trainer.sessionTotal == 0 ? "--" : "\(trainer.sessionCorrect)/\(trainer.sessionTotal)"
+        trainer.hasHintContent ? "再显一位" : "提示一位"
     }
 
     private func primaryAction() {
