@@ -1,143 +1,120 @@
 import SwiftUI
 
 struct ReferenceView: View {
-    // 数据结构
     struct NumberGroup: Identifiable {
         let id = UUID()
         let frenchTitle: String
         let cnSubtitle: String
         let numbers: [Int]
     }
-    
-    let groups: [NumberGroup] = [
+
+    @ObservedObject private var lm = LanguageVoiceManager.shared
+
+    private let groups: [NumberGroup] = [
         NumberGroup(frenchTitle: "Les Bases", cnSubtitle: "基础数字 1-20", numbers: Array(1...20)),
         NumberGroup(frenchTitle: "Les Dizaines", cnSubtitle: "整十进位", numbers: [30, 40, 50, 60]),
-        // 修改点：在末尾追加了 100, 1000, 和代表无限的 -1
         NumberGroup(
             frenchTitle: "Les Complexes",
             cnSubtitle: "进位 · 大数 · 无限",
             numbers: Array(70...79) + [80] + Array(90...99) + [100, 1000, -1]
         )
     ]
-    
-    // 布局优化：4列布局
-    let columns = [
-        GridItem(.adaptive(minimum: 75, maximum: 100), spacing: 20)
+
+    private let columns = [
+        GridItem(.adaptive(minimum: 140), spacing: 12)
     ]
-    
+
     var body: some View {
         ZStack {
-            // 1. 全局背景
             SurrealTheme.mainBackground
-            
-            VStack(spacing: 0) {
-                // 顶部标题
-                Text("Référence")
-                    .font(SurrealTheme.Typography.title(48))
-                    .foregroundStyle(SurrealTheme.colors.deepIndigo)
-                    .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
-                    .padding(.top, 60)
-                    .padding(.bottom, 4)
 
-                // P2: 引导用户在 Écouter 中主动练习，而非停留在被动查阅
-                Text("被动参考 · 记住规则后请前往 Écouter 主动练习")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.4))
-                    .tracking(0.3)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 30)
-                    .padding(.bottom, 6)
-                
-                // 2. 滚动内容区
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 50) {
-                        ForEach(groups) { group in
-                            VStack(alignment: .leading, spacing: 20) {
-                                // 标题排版
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(group.frenchTitle)
-                                        .font(.custom("Didot", size: 32))
-                                        .foregroundStyle(SurrealTheme.colors.deepIndigo)
-                                    
-                                    Text(group.cnSubtitle)
-                                        .font(.system(size: 10, weight: .regular))
-                                        .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.5))
-                                        .tracking(1)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 18) {
+                    heroSection
+
+                    ForEach(groups) { group in
+                        ChiffreCard {
+                            ChiffreSectionHeader(
+                                eyebrow: group.frenchTitle,
+                                title: group.cnSubtitle,
+                                caption: "点击任一卡片即可朗读；拼写会根据当前语言即时切换。"
+                            )
+
+                            LazyVGrid(columns: columns, spacing: 12) {
+                                ForEach(group.numbers, id: \.self) { number in
+                                    ReferenceNumberCell(number: number, text: spokenText(for: number))
                                 }
-                                .padding(.leading, 20)
-                                
-                                // 数字网格
-                                LazyVGrid(columns: columns, spacing: 30) {
-                                    ForEach(group.numbers, id: \.self) { num in
-                                        BorderlessNumberCell(number: num)
-                                    }
-                                }
-                                .padding(.horizontal, 20)
                             }
                         }
                     }
-                    .padding(.top, 20)
-                    .padding(.bottom, 120)
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 24)
             }
         }
     }
+
+    private var heroSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Référence")
+                .font(SurrealTheme.Typography.title(34))
+                .foregroundStyle(SurrealTheme.colors.deepIndigo)
+
+            Text("把高频数字和复杂结构做成可点击的速查卡，减少被动翻找。")
+                .font(SurrealTheme.Typography.body(15))
+                .foregroundStyle(SurrealTheme.colors.textSecondary)
+
+            HStack(spacing: 10) {
+                ChiffreBadge(title: lm.currentLanguage.displayName, systemImage: "globe")
+                ChiffreBadge(title: "点击朗读", systemImage: "speaker.wave.2.fill", tint: SurrealTheme.colors.coral)
+            }
+        }
+    }
+
+    private func spokenText(for number: Int) -> String {
+        if number == -1 {
+            return lm.currentLanguage == .french ? "L'infini" : "El infinito"
+        }
+
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .spellOut
+        formatter.locale = Locale(identifier: lm.currentLanguage.localeIdentifier)
+        return formatter.string(from: NSNumber(value: number)) ?? "\(number)"
+    }
 }
 
-// --- 无边界数字单元格 ---
-struct BorderlessNumberCell: View {
+private struct ReferenceNumberCell: View {
     let number: Int
-    @State private var isPressed = false
-    
-    // 逻辑判断：是否是特殊字符（无限）
-    var isInfinity: Bool { number == -1 }
-    
+    let text: String
+
     var body: some View {
         Button {
-            // 1. 发音逻辑
-            if isInfinity {
-                // 根据语言显示不同的无限表达
-                let infinityText = LanguageVoiceManager.shared.currentLanguage == .french ? "L'infini" : "El infinito"
-                SpeechManager.shared.speak(infinityText)
-            } else {
-                // 常规数字发音 - 根据当前语言
-                let formatter = NumberFormatter()
-                formatter.numberStyle = .spellOut
-                formatter.locale = Locale(identifier: LanguageVoiceManager.shared.currentLanguage.localeIdentifier)
-                let text = formatter.string(from: NSNumber(value: number)) ?? "\(number)"
-                SpeechManager.shared.speak(text)
-            }
-            
-            // 2. 触感
-            let generator = UIImpactFeedbackGenerator(style: .light)
-            generator.impactOccurred()
-            
-            // 3. 动画
-            withAnimation(.spring(duration: 0.3)) { isPressed = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                withAnimation { isPressed = false }
-            }
-            
+            SpeechManager.shared.speak(text)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
-            ZStack {
-                // 交互反馈层
-                Circle()
-                    .fill(SurrealTheme.colors.coral.opacity(0.15))
-                    .scaleEffect(isPressed ? 1.0 : 0.5)
-                    .opacity(isPressed ? 1.0 : 0.0)
-                    .frame(width: 70, height: 70)
-                
-                // 数字/符号显示层
-                Text(isInfinity ? "∞" : "\(number)")
-                    // 针对 1000 和 ∞ 稍微调整一下字号，保持视觉平衡
-                    .font(.custom("Didot", size: isInfinity ? 40 : (number >= 1000 ? 28 : 34)))
-                    .foregroundStyle(isPressed ? SurrealTheme.colors.coral : SurrealTheme.colors.deepIndigo)
-                    // 无限符号微调位置，让它视觉居中
-                    .offset(y: isInfinity ? -2 : 0)
-                    .scaleEffect(isPressed ? 0.95 : 1.0)
+            VStack(alignment: .leading, spacing: 10) {
+                Text(number == -1 ? "∞" : "\(number)")
+                    .font(SurrealTheme.Typography.number(number >= 1000 ? 30 : 36))
+                    .foregroundStyle(SurrealTheme.colors.deepIndigo)
+
+                Text(text)
+                    .font(SurrealTheme.Typography.body(14))
+                    .foregroundStyle(SurrealTheme.colors.textSecondary)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.8)
             }
-            .frame(height: 70)
-            .contentShape(Circle())
+            .frame(maxWidth: .infinity, minHeight: 120, alignment: .topLeading)
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(SurrealTheme.colors.surfaceStrong)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(SurrealTheme.colors.border, lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }

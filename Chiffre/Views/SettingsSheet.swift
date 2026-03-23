@@ -2,344 +2,395 @@ import SwiftUI
 
 struct SettingsSheet: View {
     @ObservedObject var trainer: NumberTrainer
-    @Environment(\.dismiss) var dismiss
-    
+    @ObservedObject private var lm = LanguageVoiceManager.shared
+    @Environment(\.dismiss) private var dismiss
+
+    private let gridColumns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
+
     var body: some View {
-        ZStack {
-            // Monet-inspired soft gradient background
-            LinearGradient(
-                colors: [
-                    SurrealTheme.colors.skyDawn.opacity(0.3),
-                    SurrealTheme.colors.lavenderMist.opacity(0.4),
-                    Color.white
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            
-            VStack(spacing: 24) {
-                // 顶部抓手
-                Capsule().fill(Color.gray.opacity(0.2)).frame(width: 40, height: 5).padding(.top, 15)
-                
-                Text("Réglages (设置)")
-                    .font(SurrealTheme.Typography.header(24))
+        NavigationStack {
+            ZStack {
+                SurrealTheme.mainBackground
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 18) {
+                        introCard
+                        languageSection
+                        voiceSection
+                        modeSection
+
+                        if trainer.mode == .number {
+                            rangeSection
+                        }
+
+                        summarySection
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    .padding(.bottom, 100)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("完成") {
+                        dismiss()
+                    }
+                    .font(SurrealTheme.Typography.label(16))
                     .foregroundStyle(SurrealTheme.colors.deepIndigo)
-                
-                // MARK: - 0. 语言选择 (新增)
-                LanguageSelectionSection()
-                
-                Divider().padding(.horizontal, 30)
-                
-                // MARK: - 1. 模式选择 (横向滚动胶囊)
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Mode (模式)")
-                        .font(SurrealTheme.Typography.header(16))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 30)
-                    
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(GameMode.allCases) { mode in
-                                ModeCapsule(mode: mode, isSelected: trainer.mode == mode) {
-                                    trainer.mode = mode
-                                    trainer.generateNew(speakNow: false)
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 30)
-                    }
                 }
-                
-                Divider().padding(.horizontal, 30)
-                
-                // MARK: - 2. 语音选择 (横向滚动胶囊)
-                VoiceSelectionSection()
-                
-                Divider().padding(.horizontal, 30)
-                
-                // MARK: - 2. 动态内容区
-                // 只有在数字模式下，才显示范围调节
-                if trainer.mode == .number {
-                    VStack(spacing: 20) {
-                        VStack(spacing: 10) {
-                            HStack {
-                                Text("范围: 0 - \(trainer.maxRange)")
-                                    .font(SurrealTheme.Typography.body(18))
-                                    .monospacedDigit()
-                                Spacer()
-                            }
-                            
-                            Slider(value: Binding(
-                                get: { Double(trainer.maxRange) },
-                                set: { trainer.maxRange = Int($0) }
-                            ), in: 10...9999, step: 10)
-                            .tint(SurrealTheme.colors.coral)
-                        }
-                        
-                        // 预设按钮 (恢复了！)
-                        HStack(spacing: 12) {
-                            PresetButton(label: "简单 (10)", value: 10, trainer: trainer)
-                            PresetButton(label: "中等 (100)", value: 100, trainer: trainer)
-                            PresetButton(label: "困难 (1000)", value: 1000, trainer: trainer)
-                        }
-                    }
-                    .padding(.horizontal, 30)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                } else {
-                    // 其他模式的提示文案
-                    ContentUnavailableView {
-                        Image(systemName: trainer.mode.icon)
-                            .font(.largeTitle)
-                            .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.5))
-                    } description: {
-                        Text(getModeDescription(for: trainer.mode))
-                            .font(SurrealTheme.Typography.body(16))
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(height: 150)
-                }
-                
-                Spacer()
             }
-            .animation(.spring(), value: trainer.mode)
+            .safeAreaInset(edge: .bottom) {
+                bottomBar
+            }
         }
     }
-    
-    func getModeDescription(for mode: GameMode) -> String {
-        switch mode {
-        case .phoneNumber: return "生成随机的法国手机号格式\n(06/07 开头)"
-        case .price: return "练习含小数点的价格表达\n(如 12,50 €)"
-        case .time: return "练习 24 小时制时间表达\n(如 14h30)"
-        case .year: return "练习历史年份或近期年份\n(1950 - 2030)"
-        case .month: return "练习日期+月份表达\n(如 le 15 janvier)"
-        case .trainNumber: return "练习法国火车号码\n(TGV, Intercités, TER)"
-        case .flightNumber: return "练习国际航班号\n(如 AF 1234, EK 73)"
-        default: return ""
-        }
-    }
-}
 
-// 辅助组件：模式选择胶囊
-struct ModeCapsule: View {
-    let mode: GameMode
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: mode.icon)
-                Text(mode.rawValue)
-                    .font(.caption).bold()
-            }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 16)
-            .background(isSelected ? SurrealTheme.colors.deepIndigo : Color.black.opacity(0.05))
-            .foregroundStyle(isSelected ? .white : SurrealTheme.colors.deepIndigo)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule().strokeBorder(SurrealTheme.colors.deepIndigo.opacity(0.1), lineWidth: 1)
+    private var introCard: some View {
+        ChiffreCard {
+            ChiffreSectionHeader(
+                eyebrow: "Practice Setup",
+                title: "训练选项",
+                caption: "把语言、音色、题型和范围放在同一层，减少来回试错。"
             )
+
+            HStack(spacing: 10) {
+                ChiffreBadge(title: lm.currentLanguage.displayName, systemImage: "globe")
+                ChiffreBadge(title: trainer.mode.rawValue, systemImage: trainer.mode.icon, tint: SurrealTheme.colors.coral)
+            }
+        }
+    }
+
+    private var languageSection: some View {
+        ChiffreCard {
+            ChiffreSectionHeader(
+                eyebrow: "Language",
+                title: "训练语言",
+                caption: "切换后，听写页和口语页都会立即刷新。"
+            )
+
+            LazyVGrid(columns: gridColumns, spacing: 12) {
+                ForEach(AppLanguage.allCases) { language in
+                    Button {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                            lm.currentLanguage = language
+                        }
+                        preview(language: language)
+                    } label: {
+                        ChiffreOptionTile(
+                            icon: language == .french ? "globe.europe.africa.fill" : "globe.americas.fill",
+                            title: language.displayName,
+                            subtitle: language == .french ? "法语数字与常见生活表达" : "西语数字与常见生活表达",
+                            isSelected: lm.currentLanguage == language,
+                            accent: SurrealTheme.colors.deepIndigo
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var voiceSection: some View {
+        ChiffreCard {
+            HStack(alignment: .top) {
+                ChiffreSectionHeader(
+                    eyebrow: "Voice",
+                    title: "发音音色",
+                    caption: "选择更顺耳的一种，练习时更容易维持专注。"
+                )
+
+                Spacer(minLength: 12)
+
+                ChiffreActionButton(title: "试听", systemImage: "speaker.wave.2.fill", style: .secondary) {
+                    SpeechManager.shared.speak(lm.getTestPhrase())
+                }
+            }
+
+            VStack(spacing: 12) {
+                if lm.currentLanguage == .french {
+                    ForEach(FrenchVoice.allCases) { voice in
+                        Button {
+                            lm.selectedFrenchVoice = voice
+                            SpeechManager.shared.speak("Bonjour, je m'appelle \(voice.rawValue)")
+                        } label: {
+                            VoiceChoiceRow(
+                                title: voice.displayName,
+                                subtitle: voice == .amelie ? "推荐做默认训练音色" : "更沉稳，适合对比辨音",
+                                icon: voice.icon,
+                                isSelected: lm.selectedFrenchVoice == voice
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } else {
+                    ForEach(SpanishVoice.allCases) { voice in
+                        Button {
+                            lm.selectedSpanishVoice = voice
+                            SpeechManager.shared.speak("Hola, me llamo \(voice.rawValue)")
+                        } label: {
+                            VoiceChoiceRow(
+                                title: voice.displayName,
+                                subtitle: voice == .monica ? "推荐做默认训练音色" : "更低沉，适合切换节奏时使用",
+                                icon: voice.icon,
+                                isSelected: lm.selectedSpanishVoice == voice
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    private var modeSection: some View {
+        ChiffreCard {
+            ChiffreSectionHeader(
+                eyebrow: "Mode",
+                title: "练习内容",
+                caption: "不再横向滚动，所有模式直接平铺，方便比较。"
+            )
+
+            LazyVGrid(columns: gridColumns, spacing: 12) {
+                ForEach(GameMode.allCases) { mode in
+                    Button {
+                        trainer.mode = mode
+                        trainer.generateNew(speakNow: false)
+                    } label: {
+                        ChiffreOptionTile(
+                            icon: mode.icon,
+                            title: mode.rawValue,
+                            subtitle: modeDescription(for: mode),
+                            isSelected: trainer.mode == mode,
+                            accent: SurrealTheme.colors.coral
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var rangeSection: some View {
+        ChiffreCard {
+            ChiffreSectionHeader(
+                eyebrow: "Range",
+                title: "数字范围",
+                caption: "用更明确的难度阶梯控制输入密度。"
+            )
+
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("0 - \(trainer.maxRange)")
+                        .font(SurrealTheme.Typography.header(28))
+                        .monospacedDigit()
+                        .foregroundStyle(SurrealTheme.colors.deepIndigo)
+
+                    Spacer()
+
+                    ChiffreStatusTag(title: rangeLabel, tint: SurrealTheme.colors.lilyPad)
+                }
+
+                Slider(
+                    value: Binding(
+                        get: { Double(trainer.maxRange) },
+                        set: { trainer.maxRange = Int($0) }
+                    ),
+                    in: 10...9999,
+                    step: 10
+                )
+                .tint(SurrealTheme.colors.coral)
+
+                HStack(spacing: 10) {
+                    RangePresetChip(title: "简单", value: 10, trainer: trainer)
+                    RangePresetChip(title: "中等", value: 100, trainer: trainer)
+                    RangePresetChip(title: "困难", value: 1000, trainer: trainer)
+                }
+            }
+        }
+    }
+
+    private var summarySection: some View {
+        ChiffreCard {
+            ChiffreSectionHeader(
+                eyebrow: "Ready",
+                title: "当前配置",
+                caption: "关闭后立即回到练习，不需要再次确认。"
+            )
+
+            VStack(alignment: .leading, spacing: 10) {
+                summaryRow(title: "语言", value: lm.currentLanguage.displayName)
+                summaryRow(title: "音色", value: currentVoiceName)
+                summaryRow(title: "题型", value: trainer.mode.rawValue)
+
+                if trainer.mode == .number {
+                    summaryRow(title: "范围", value: "0 - \(trainer.maxRange)")
+                }
+            }
+        }
+    }
+
+    private var bottomBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+                .overlay(SurrealTheme.colors.border)
+
+            ChiffreActionButton(title: "返回练习", systemImage: "checkmark", style: .primary, fullWidth: true) {
+                dismiss()
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            .background(.ultraThinMaterial)
+        }
+        .background(.ultraThinMaterial)
+    }
+
+    private func summaryRow(title: String, value: String) -> some View {
+        HStack {
+            Text(title)
+                .font(SurrealTheme.Typography.label(14))
+                .foregroundStyle(SurrealTheme.colors.textSecondary)
+
+            Spacer()
+
+            Text(value)
+                .font(SurrealTheme.Typography.body(15))
+                .foregroundStyle(SurrealTheme.colors.deepIndigo)
+        }
+        .padding(.vertical, 2)
+    }
+
+    private var currentVoiceName: String {
+        switch lm.currentLanguage {
+        case .french:
+            return lm.selectedFrenchVoice.displayName
+        case .spanish:
+            return lm.selectedSpanishVoice.displayName
+        }
+    }
+
+    private var rangeLabel: String {
+        switch trainer.maxRange {
+        case ..<50:
+            return "基础"
+        case ..<300:
+            return "进阶"
+        default:
+            return "挑战"
+        }
+    }
+
+    private func preview(language: AppLanguage) {
+        switch language {
+        case .french:
+            SpeechManager.shared.speak("Français sélectionné")
+        case .spanish:
+            SpeechManager.shared.speak("Español seleccionado")
+        }
+    }
+
+    private func modeDescription(for mode: GameMode) -> String {
+        switch mode {
+        case .number:
+            return "单数字和大数字，适合打基础。"
+        case .phoneNumber:
+            return "手机号分组转写，更贴近真实输入。"
+        case .price:
+            return "金额与小数表达，强化节奏辨识。"
+        case .time:
+            return "24 小时制时间，适合口头信息理解。"
+        case .year:
+            return "历史年份和近未来年份混合。"
+        case .month:
+            return "日期与月份组合，训练连读。"
+        case .trainNumber:
+            return "车次加数字，适合公共交通场景。"
+        case .flightNumber:
+            return "字母加数字组合，强化听辨跨度。"
         }
     }
 }
 
-// 辅助组件：预设按钮 (保持之前的逻辑)
-struct PresetButton: View {
-    let label: String
+private struct VoiceChoiceRow: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(isSelected ? .white : SurrealTheme.colors.deepIndigo)
+                .frame(width: 42, height: 42)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(isSelected ? SurrealTheme.colors.deepIndigo.opacity(0.22) : SurrealTheme.colors.deepIndigo.opacity(0.08))
+                )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(SurrealTheme.Typography.header(17))
+                    .foregroundStyle(isSelected ? .white : SurrealTheme.colors.deepIndigo)
+
+                Text(subtitle)
+                    .font(SurrealTheme.Typography.body(13))
+                    .foregroundStyle(isSelected ? Color.white.opacity(0.82) : SurrealTheme.colors.textSecondary)
+            }
+
+            Spacer()
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(isSelected ? SurrealTheme.colors.deepIndigo : SurrealTheme.colors.surfaceStrong)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(isSelected ? SurrealTheme.colors.deepIndigo : SurrealTheme.colors.border, lineWidth: 1)
+        )
+    }
+}
+
+private struct RangePresetChip: View {
+    let title: String
     let value: Int
     @ObservedObject var trainer: NumberTrainer
-    
-    var isSelected: Bool { trainer.maxRange == value }
-    
+
+    private var isSelected: Bool {
+        trainer.maxRange == value
+    }
+
     var body: some View {
         Button {
             trainer.maxRange = value
             trainer.generateNew(speakNow: false)
         } label: {
-            Text(label)
-                .font(.caption).bold()
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity)
-                .background(isSelected ? SurrealTheme.colors.coral : Color.white)
+            Text(title)
+                .font(SurrealTheme.Typography.label(14))
                 .foregroundStyle(isSelected ? .white : SurrealTheme.colors.deepIndigo)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: Color.black.opacity(0.05), radius: 2, y: 1)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(isSelected ? SurrealTheme.colors.coral : SurrealTheme.colors.surfaceStrong)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(isSelected ? SurrealTheme.colors.coral : SurrealTheme.colors.border, lineWidth: 1)
+                )
         }
+        .buttonStyle(.plain)
     }
 }
-
-// MARK: - 语音选择组件
-struct VoiceSelectionSection: View {
-    @ObservedObject private var lm = LanguageVoiceManager.shared
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Voix (语音)")
-                    .font(SurrealTheme.Typography.header(16))
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-
-                // 试听按钮
-                Button {
-                    SpeechManager.shared.speak(lm.getTestPhrase())
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "speaker.wave.2.fill")
-                        Text("试听")
-                    }
-                    .font(.caption)
-                    .foregroundStyle(SurrealTheme.colors.coral)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(SurrealTheme.colors.coral.opacity(0.1))
-                    .clipShape(Capsule())
-                }
-            }
-            .padding(.horizontal, 30)
-
-            // 根据当前语言显示对应的语音选择
-            if lm.currentLanguage == .french {
-                FrenchVoiceSelection()
-            } else {
-                SpanishVoiceSelection()
-            }
-        }
-    }
-}
-
-struct FrenchVoiceSelection: View {
-    @ObservedObject private var lm = LanguageVoiceManager.shared
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                ForEach(FrenchVoice.allCases) { voice in
-                    VoiceCapsule(
-                        voice: voice,
-                        isSelected: lm.selectedFrenchVoice == voice
-                    ) {
-                        lm.selectedFrenchVoice = voice
-                        SpeechManager.shared.speak("Bonjour, je m'appelle \(voice.rawValue)")
-                    }
-                }
-            }
-            .padding(.horizontal, 30)
-        }
-    }
-}
-
-struct SpanishVoiceSelection: View {
-    @ObservedObject private var lm = LanguageVoiceManager.shared
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                ForEach(SpanishVoice.allCases) { voice in
-                    VoiceCapsule(
-                        voice: voice,
-                        isSelected: lm.selectedSpanishVoice == voice
-                    ) {
-                        lm.selectedSpanishVoice = voice
-                        SpeechManager.shared.speak("Hola, me llamo \(voice.rawValue)")
-                    }
-                }
-            }
-            .padding(.horizontal, 30)
-        }
-    }
-}
-
-// MARK: - 语言选择组件
-struct LanguageSelectionSection: View {
-    @ObservedObject private var lm = LanguageVoiceManager.shared
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Langue (语言)")
-                .font(SurrealTheme.Typography.header(16))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 30)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(AppLanguage.allCases) { language in
-                        LanguageCapsule(
-                            language: language,
-                            isSelected: lm.currentLanguage == language
-                        ) {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                                lm.currentLanguage = language
-                            }
-                            testLanguage(language)
-                        }
-                    }
-                }
-                .padding(.horizontal, 30)
-            }
-        }
-    }
-
-    private func testLanguage(_ language: AppLanguage) {
-        let phrase: String
-        switch language {
-        case .french:  phrase = "Français sélectionné"
-        case .spanish: phrase = "Español seleccionado"
-        }
-        SpeechManager.shared.speak(phrase)
-    }
-}
-
-// 辅助组件：语言选择胶囊
-struct LanguageCapsule: View {
-    let language: AppLanguage
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Text(language.icon)
-                Text(language.displayName)
-                    .font(.caption).bold()
-            }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 16)
-            .background(isSelected ? SurrealTheme.colors.deepIndigo : Color.black.opacity(0.05))
-            .foregroundStyle(isSelected ? .white : SurrealTheme.colors.deepIndigo)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule().strokeBorder(SurrealTheme.colors.deepIndigo.opacity(0.1), lineWidth: 1)
-            )
-        }
-    }
-}
-
-// 辅助组件：语音选择胶囊
-struct VoiceCapsule: View {
-    let voice: any LanguageVoice
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: voice.icon)
-                Text(voice.displayName)
-                    .font(.caption).bold()
-            }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 16)
-            .background(isSelected ? SurrealTheme.colors.deepIndigo : Color.black.opacity(0.05))
-            .foregroundStyle(isSelected ? .white : SurrealTheme.colors.deepIndigo)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule().strokeBorder(SurrealTheme.colors.deepIndigo.opacity(0.1), lineWidth: 1)
-            )
-        }
-    }
-}
-

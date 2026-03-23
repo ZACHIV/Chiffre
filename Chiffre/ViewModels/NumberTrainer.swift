@@ -16,7 +16,7 @@ enum GameMode: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .number:       return "number"
+        case .number:       return "number.square.fill"
         case .phoneNumber:  return "phone.fill"
         case .price:        return "eurosign.circle.fill"
         case .time:         return "clock.fill"
