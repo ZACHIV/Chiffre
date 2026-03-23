@@ -47,10 +47,11 @@ struct ListeningSupportPanel: View {
                 } else {
                     VStack(alignment: .leading, spacing: 10) {
                         sentenceView
-                            .font(.system(size: 14, weight: .regular, design: .rounded))
+                            .font(.system(size: 21, weight: .medium, design: .rounded))
                             .foregroundStyle(ListeningCanvasTheme.body)
                             .multilineTextAlignment(.leading)
-                            .lineSpacing(3)
+                            .lineSpacing(5)
+                            .minimumScaleFactor(0.78)
 
                         HStack(spacing: 8) {
                             Image(systemName: feedbackIcon)

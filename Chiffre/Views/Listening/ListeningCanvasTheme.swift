@@ -31,13 +31,11 @@ enum ListeningCanvasTheme {
 
     static let primaryGradient = LinearGradient(
         colors: [
-            SurrealTheme.colors.skyDawn,
-            SurrealTheme.colors.lavenderMist,
-            SurrealTheme.colors.coral,
-            Color(red: 1.0, green: 0.72, blue: 0.6)
+            Color(red: 1.0, green: 0.604, blue: 0.62),
+            Color(red: 0.996, green: 0.812, blue: 0.937)
         ],
-        startPoint: .leading,
-        endPoint: .trailing
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
     )
 
     static let pillGradient = LinearGradient(
@@ -52,12 +50,11 @@ enum ListeningCanvasTheme {
 
     static let successGradient = LinearGradient(
         colors: [
-            SurrealTheme.colors.lilyPad,
-            SurrealTheme.colors.waterBlue.opacity(0.8),
-            SurrealTheme.colors.lavenderMist.opacity(0.9)
+            Color(red: 1.0, green: 0.604, blue: 0.62),
+            Color(red: 0.996, green: 0.812, blue: 0.937)
         ],
-        startPoint: .leading,
-        endPoint: .trailing
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
     )
 
     struct Metrics {
@@ -66,9 +63,9 @@ enum ListeningCanvasTheme {
         var horizontalPadding: CGFloat { size.width > 430 ? 28 : 20 }
         var topPadding: CGFloat { size.height < 760 ? 18 : 28 }
         var bottomPadding: CGFloat { size.height < 760 ? 14 : 22 }
-        var sectionSpacing: CGFloat { size.height < 760 ? 16 : 22 }
+        var sectionSpacing: CGFloat { size.height < 760 ? 22 : 30 }
         var brandSize: CGFloat { size.width > 430 ? 56 : 48 }
-        var stageHeight: CGFloat { min(max(size.height * 0.3, 240), 320) }
+        var stageHeight: CGFloat { min(max(size.height * 0.26, 220), 286) }
         var stageCornerRadius: CGFloat { size.height < 760 ? 30 : 36 }
         var panelCornerRadius: CGFloat { 26 }
         var stagePadding: CGFloat { size.height < 760 ? 20 : 24 }

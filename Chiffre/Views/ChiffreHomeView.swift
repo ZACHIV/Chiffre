@@ -14,6 +14,7 @@ struct ChiffreHomeView: View {
 
                 VStack(spacing: metrics.sectionSpacing) {
                     header(metrics: metrics)
+                        .padding(.bottom, trainer.answerState == .waiting ? 26 : 10)
 
                     ListeningStageView(
                         mode: trainer.mode,
@@ -66,7 +67,7 @@ struct ChiffreHomeView: View {
     }
 
     private func header(metrics: ListeningCanvasTheme.Metrics) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: trainer.answerState == .waiting ? 24 : 14) {
             HStack {
                 Menu {
                     ForEach(AppLanguage.allCases) { language in
@@ -108,6 +109,7 @@ struct ChiffreHomeView: View {
                 .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
                 .contentTransition(.opacity)
                 .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, trainer.answerState == .waiting ? 8 : 0)
                 .id(lm.currentLanguage)
         }
     }
