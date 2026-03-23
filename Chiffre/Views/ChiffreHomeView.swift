@@ -12,6 +12,15 @@ struct ChiffreHomeView: View {
         GridItem(.flexible(), spacing: 12)
     ]
 
+    private let helperColumns = [
+        GridItem(.flexible(), spacing: 10),
+        GridItem(.flexible(), spacing: 10)
+    ]
+
+    private let structureColumns = [
+        GridItem(.adaptive(minimum: 120), spacing: 10)
+    ]
+
     var body: some View {
         ZStack {
             SurrealTheme.mainBackground
@@ -19,7 +28,7 @@ struct ChiffreHomeView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
                     heroSection
-                    metricsSection
+                    focusSection
                     practiceSection
                     responseSection
                 }
@@ -54,7 +63,7 @@ struct ChiffreHomeView: View {
                         .font(SurrealTheme.Typography.title(34))
                         .foregroundStyle(SurrealTheme.colors.deepIndigo)
 
-                    Text("更清晰的听写训练，先听，再输入，再复盘。")
+                    Text("专项训练时间、价格、电话和编号这些最容易糊掉的口头信息。")
                         .font(SurrealTheme.Typography.body(15))
                         .foregroundStyle(SurrealTheme.colors.textSecondary)
                 }
@@ -82,30 +91,31 @@ struct ChiffreHomeView: View {
 
             HStack(spacing: 10) {
                 ChiffreBadge(title: lm.currentLanguage.displayName, systemImage: "globe")
-                ChiffreBadge(title: trainer.mode.rawValue, systemImage: trainer.mode.icon, tint: SurrealTheme.colors.coral)
+                ChiffreBadge(title: trainer.currentPrompt.sceneTag, systemImage: "mappin.and.ellipse", tint: SurrealTheme.colors.coral)
+                ChiffreBadge(title: trainer.currentPrompt.structureLabel, systemImage: "square.split.2x1", tint: SurrealTheme.colors.lilyPad)
             }
         }
     }
 
-    private var metricsSection: some View {
+    private var focusSection: some View {
         LazyVGrid(columns: metricColumns, spacing: 12) {
             ChiffreMetricCard(
-                title: "准确率",
-                value: trainer.sessionTotal == 0 ? "--" : "\(trainer.sessionCorrect)/\(trainer.sessionTotal)",
-                caption: trainer.sessionTotal == 0 ? "开始一轮后显示" : "当前会话表现"
+                title: "场景",
+                value: trainer.currentPrompt.sceneTag,
+                caption: trainer.currentPrompt.taskTitle
             )
 
             ChiffreMetricCard(
-                title: "连对",
-                value: trainer.currentStreak == 0 ? "0" : "\(trainer.currentStreak)",
-                caption: trainer.currentStreak == 0 ? "保持节奏" : "连续答对中",
+                title: "结构",
+                value: trainer.currentPrompt.structureLabel,
+                caption: "先判断类型，再决定怎么听",
                 tint: SurrealTheme.colors.coral
             )
 
             ChiffreMetricCard(
-                title: "语速",
-                value: trainer.speedLabel,
-                caption: "会随表现自动调整",
+                title: "辅助",
+                value: trainer.assistStageLabel,
+                caption: "当前语速 \(trainer.speedLabel)",
                 tint: SurrealTheme.colors.lilyPad
             )
         }
@@ -114,9 +124,9 @@ struct ChiffreHomeView: View {
     private var practiceSection: some View {
         ChiffreCard {
             ChiffreSectionHeader(
-                eyebrow: "Current Drill",
-                title: trainer.mode.rawValue,
-                caption: modeSummary
+                eyebrow: "Listening Drill",
+                title: trainer.currentPrompt.taskTitle,
+                caption: trainer.coachMessage
             )
 
             VStack(spacing: 16) {
@@ -124,20 +134,28 @@ struct ChiffreHomeView: View {
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .fill(SurrealTheme.colors.surfaceStrong)
 
-                    VStack(spacing: 12) {
+                    VStack(spacing: 14) {
                         if trainer.answerState == .waiting {
                             Image(systemName: "ear.and.waveform")
                                 .font(.system(size: 44, weight: .semibold))
                                 .foregroundStyle(SurrealTheme.colors.coral)
 
-                            Text("先听音，再输入你听到的内容")
+                            Text("先听整句，再把关键信息写下来")
                                 .font(SurrealTheme.Typography.header(22))
                                 .foregroundStyle(SurrealTheme.colors.deepIndigo)
+                                .multilineTextAlignment(.center)
 
-                            Text("随时可以重播音频，不需要先打开设置。")
+                            Text(trainer.currentPrompt.coachLine)
                                 .font(SurrealTheme.Typography.body(14))
                                 .foregroundStyle(SurrealTheme.colors.textSecondary)
                                 .multilineTextAlignment(.center)
+
+                            if trainer.shouldShowHintCard, let scaffold = trainer.hintScaffold {
+                                Text(scaffold)
+                                    .font(SurrealTheme.Typography.number(28))
+                                    .foregroundStyle(SurrealTheme.colors.deepIndigo)
+                                    .padding(.top, 4)
+                            }
                         } else {
                             Text(trainer.currentDisplay)
                                 .font(currentDisplayFont)
@@ -147,66 +165,134 @@ struct ChiffreHomeView: View {
                                 .lineLimit(2)
 
                             ChiffreStatusTag(title: answerStateLabel, tint: answerTint)
+
+                            Text(trainer.coachMessage)
+                                .font(SurrealTheme.Typography.body(14))
+                                .foregroundStyle(SurrealTheme.colors.textSecondary)
+                                .multilineTextAlignment(.center)
                         }
                     }
                     .padding(24)
                 }
-                .frame(height: 220)
+                .frame(height: 250)
 
                 HStack(spacing: 10) {
-                    ChiffreBadge(title: trainer.speedLabel, systemImage: "waveform.path.ecg", tint: SurrealTheme.colors.lilyPad)
-
-                    if trainer.mode == .number {
-                        ChiffreBadge(title: "0 - \(trainer.maxRange)", systemImage: "number.square", tint: SurrealTheme.colors.coral)
-                    }
+                    ChiffreBadge(title: trainer.mode.rawValue, systemImage: trainer.mode.icon)
+                    ChiffreBadge(title: "\(trainer.lastReplayLayer.shortTitle)重播", systemImage: "waveform.path.ecg", tint: SurrealTheme.colors.waterBlue)
                 }
             }
         }
     }
 
-    @ViewBuilder
     private var responseSection: some View {
         ChiffreCard {
             ChiffreSectionHeader(
-                eyebrow: "Response",
-                title: trainer.answerState == .waiting ? "输入答案" : "结果反馈",
-                caption: trainer.answerState == .waiting ? "留空点击主按钮会直接显示答案。" : feedbackCaption
+                eyebrow: trainer.answerState == .waiting ? "Response" : "Review",
+                title: trainer.answerState == .waiting ? "把你听到的内容写下来" : "对照结构复盘",
+                caption: trainer.answerState == .waiting ? "不确定时先重听，再决定要不要提示。" : trainer.coachMessage
             )
 
-            switch trainer.answerState {
-            case .waiting:
-                VStack(alignment: .leading, spacing: 12) {
-                    TextField(trainer.dataProvider.inputPlaceholder, text: $trainer.userInput)
-                        .focused($isInputFocused)
-                        .font(SurrealTheme.Typography.body(18))
-                        .keyboardType(trainer.preferredKeyboardType)
-                        .textInputAutocapitalization(.never)
-                        .disableAutocorrection(true)
-                        .padding(.horizontal, 18)
-                        .frame(height: 56)
-                        .background(
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .fill(SurrealTheme.colors.surfaceStrong)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .stroke(SurrealTheme.colors.border, lineWidth: 1)
-                        )
-                        .onSubmit {
-                            trainer.verify()
-                        }
+            if trainer.answerState == .waiting {
+                waitingContent
+            } else {
+                reviewContent
+            }
+        }
+    }
 
-                    Text("支持数字、日期、电话、价格等格式；系统会做适度宽松匹配。")
-                        .font(SurrealTheme.Typography.body(13))
-                        .foregroundStyle(SurrealTheme.colors.textSecondary)
+    private var waitingContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            TextField(trainer.dataProvider.inputPlaceholder, text: $trainer.userInput)
+                .focused($isInputFocused)
+                .font(SurrealTheme.Typography.body(18))
+                .keyboardType(trainer.preferredKeyboardType)
+                .textInputAutocapitalization(.never)
+                .disableAutocorrection(true)
+                .padding(.horizontal, 18)
+                .frame(height: 56)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(SurrealTheme.colors.surfaceStrong)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(SurrealTheme.colors.border, lineWidth: 1)
+                )
+                .onSubmit {
+                    trainer.verify()
                 }
 
-            case .revealed, .correct, .wrong:
-                VStack(alignment: .leading, spacing: 14) {
-                    feedbackBanner
-                    sentenceCard
+            Text("支持数字、时间、价格、电话、日期、车次和航班号等结构化转写。")
+                .font(SurrealTheme.Typography.body(13))
+                .foregroundStyle(SurrealTheme.colors.textSecondary)
+
+            LazyVGrid(columns: helperColumns, spacing: 10) {
+                ChiffreActionButton(title: "重听整句", systemImage: "speaker.wave.2.fill", style: .secondary, fullWidth: true) {
+                    trainer.replayFullSentence()
+                }
+
+                ChiffreActionButton(title: trainer.focusReplayTitle, systemImage: "dot.scope", style: .secondary, fullWidth: true) {
+                    trainer.replayFocusedSegment()
+                }
+
+                ChiffreActionButton(title: "慢速听", systemImage: "tortoise.fill", style: .secondary, fullWidth: true) {
+                    trainer.replaySlowSentence()
+                }
+
+                ChiffreActionButton(title: trainer.hintButtonTitle, systemImage: "lightbulb.fill", style: .secondary, fullWidth: true) {
+                    trainer.advanceHint()
                 }
             }
+
+            if trainer.shouldShowHintCard {
+                hintCard
+            }
+        }
+    }
+
+    private var hintCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                ChiffreStatusTag(title: trainer.assistStageLabel, tint: SurrealTheme.colors.coral)
+                Spacer()
+                Text(trainer.hintCardTitle)
+                    .font(SurrealTheme.Typography.label(13))
+                    .foregroundStyle(SurrealTheme.colors.textSecondary)
+            }
+
+            Text(trainer.hintCardMessage)
+                .font(SurrealTheme.Typography.body(15))
+                .foregroundStyle(SurrealTheme.colors.deepIndigo)
+
+            if let scaffold = trainer.hintScaffold {
+                Text(scaffold)
+                    .font(SurrealTheme.Typography.number(30))
+                    .foregroundStyle(SurrealTheme.colors.deepIndigo)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+
+            if let partial = trainer.hintPartialReveal {
+                Text(partial)
+                    .font(SurrealTheme.Typography.number(24))
+                    .foregroundStyle(SurrealTheme.colors.coral)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(SurrealTheme.colors.surfaceStrong)
+        )
+    }
+
+    private var reviewContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            feedbackBanner
+            structureCard
+            sentenceCard
         }
     }
 
@@ -226,21 +312,31 @@ struct ChiffreHomeView: View {
                     .font(SurrealTheme.Typography.header(18))
                     .foregroundStyle(SurrealTheme.colors.deepIndigo)
 
-                if trainer.answerState == .wrong {
-                    Text("你的输入：\(trainer.userInput)")
-                        .font(SurrealTheme.Typography.body(14))
-                        .foregroundStyle(SurrealTheme.colors.textSecondary)
-                } else if trainer.answerState == .revealed {
-                    Text("这次不计分，先看答案和语境再继续。")
-                        .font(SurrealTheme.Typography.body(14))
-                        .foregroundStyle(SurrealTheme.colors.textSecondary)
-                } else {
-                    Text("答对了，下一题会继续沿着当前语速推进。")
-                        .font(SurrealTheme.Typography.body(14))
-                        .foregroundStyle(SurrealTheme.colors.textSecondary)
+                Text(feedbackLine)
+                    .font(SurrealTheme.Typography.body(14))
+                    .foregroundStyle(SurrealTheme.colors.textSecondary)
+            }
+        }
+    }
+
+    private var structureCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("结构拆解")
+                .font(SurrealTheme.Typography.label(13))
+                .foregroundStyle(SurrealTheme.colors.textSecondary)
+
+            LazyVGrid(columns: structureColumns, spacing: 10) {
+                ForEach(trainer.structureSegments) { segment in
+                    ChiffreStructureChip(title: segment.label, value: segment.value, tint: answerTint)
                 }
             }
         }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(SurrealTheme.colors.surfaceStrong)
+        )
     }
 
     private var sentenceCard: some View {
@@ -268,10 +364,6 @@ struct ChiffreHomeView: View {
                 .overlay(SurrealTheme.colors.border)
 
             HStack(spacing: 10) {
-                ChiffreActionButton(title: "重播", systemImage: "speaker.wave.2.fill", style: .secondary) {
-                    trainer.replay()
-                }
-
                 ChiffreActionButton(title: primaryActionTitle, systemImage: primaryActionIcon, style: .primary, fullWidth: true) {
                     if trainer.answerState == .waiting {
                         trainer.verify()
@@ -305,7 +397,7 @@ struct ChiffreHomeView: View {
         case .correct:
             return SurrealTheme.colors.lilyPad
         case .wrong:
-            return SurrealTheme.colors.danger
+            return SurrealTheme.colors.coral
         }
     }
 
@@ -316,20 +408,20 @@ struct ChiffreHomeView: View {
         case .revealed:
             return "已显示答案"
         case .correct:
-            return "回答正确"
+            return "这次听清了"
         case .wrong:
-            return "需要再练一次"
+            return "再抓一次关键位"
         }
     }
 
-    private var feedbackCaption: String {
+    private var feedbackLine: String {
         switch trainer.answerState {
         case .revealed:
-            return "这次没有计分，适合先建立题型感觉。"
+            return "这次先不计分，先把这一类结构看顺。"
         case .correct:
-            return "你的输入和目标答案已经匹配。"
+            return "你的输入已经对上关键结构，继续保持这个节奏。"
         case .wrong:
-            return "对照语境找出差异，再继续下一题。"
+            return "你的输入是“\(trainer.userInput)”，先对照结构卡找差异。"
         case .waiting:
             return ""
         }
@@ -342,7 +434,7 @@ struct ChiffreHomeView: View {
         case .correct:
             return "checkmark.circle.fill"
         case .wrong:
-            return "xmark.circle.fill"
+            return "waveform.badge.magnifyingglass"
         case .waiting:
             return "square.fill"
         }
@@ -351,9 +443,9 @@ struct ChiffreHomeView: View {
     private var primaryActionTitle: String {
         switch trainer.answerState {
         case .waiting:
-            return trainer.canVerify ? trainer.dataProvider.revealText : revealAnswerTitle
+            return trainer.canVerify ? "对照一下" : "显示答案"
         case .revealed, .correct, .wrong:
-            return trainer.dataProvider.nextText
+            return "下一题"
         }
     }
 
@@ -364,23 +456,6 @@ struct ChiffreHomeView: View {
         case .revealed, .correct, .wrong:
             return "arrow.right"
         }
-    }
-
-    private var revealAnswerTitle: String {
-        switch lm.currentLanguage {
-        case .french:
-            return "Réponse"
-        case .spanish:
-            return "Respuesta"
-        }
-    }
-
-    private var modeSummary: String {
-        if trainer.mode == .number {
-            return "数字范围 0 - \(trainer.maxRange)，适合做基础节奏和转写训练。"
-        }
-
-        return "当前题型会自动生成真实语境中的 \(trainer.mode.rawValue) 练习。"
     }
 
     private func highlightedSentenceText() -> Text {

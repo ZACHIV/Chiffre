@@ -110,6 +110,7 @@ struct ChiffreActionButton: View {
     let systemImage: String
     let style: Style
     var fullWidth: Bool = false
+    var isDisabled: Bool = false
     let action: () -> Void
 
     var body: some View {
@@ -127,6 +128,8 @@ struct ChiffreActionButton: View {
                 )
         }
         .buttonStyle(.plain)
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.52 : 1)
     }
 
     private var foreground: Color {
@@ -174,6 +177,34 @@ struct ChiffreActionButton: View {
         case .primary, .quiet:
             return 0
         }
+    }
+}
+
+struct ChiffreStructureChip: View {
+    let title: String
+    let value: String
+    var tint: Color = SurrealTheme.colors.deepIndigo
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(SurrealTheme.Typography.label(11))
+                .foregroundStyle(SurrealTheme.colors.textSecondary)
+
+            Text(value)
+                .font(SurrealTheme.Typography.header(18))
+                .monospacedDigit()
+                .foregroundStyle(tint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(tint.opacity(0.10))
+        )
     }
 }
 
