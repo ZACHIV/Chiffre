@@ -36,11 +36,25 @@ enum AnswerState: Equatable {
     case wrong     // 验证错误
 }
 
+// MARK: - 渐进提示阶段（P1）
+enum HintStage: Int {
+    case none
+    case replayFull
+    case replayFocused
+    case structure
+    case scaffold
+    case partialReveal
+    case fullReveal
+}
+
 // MARK: - 核心 ViewModel
 class NumberTrainer: ObservableObject {
     @Published var currentDisplay: String = ""
     @Published var userInput: String = ""
     @Published var answerState: AnswerState = .waiting
+    @Published var hintStage: HintStage = .none
+    @Published var hintMessage: String = ""
+    @Published var hintVisual: String = ""
 
     // 会话统计（P1: 错误跟踪）
     @Published var sessionCorrect: Int = 0
@@ -95,6 +109,26 @@ class NumberTrainer: ObservableObject {
         !userInput.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    var hasHintContent: Bool {
+        !hintMessage.isEmpty || !hintVisual.isEmpty
+    }
+
+    var structureHintText: String {
+        dataProvider.structureHint(for: mode)
+    }
+
+    var hintActionText: String {
+        switch hintStage {
+        case .none:           return dataProvider.hintStartText
+        case .replayFull:     return dataProvider.hintFocusReplayText
+        case .replayFocused:  return dataProvider.hintStructureText
+        case .structure:      return dataProvider.hintScaffoldText
+        case .scaffold:       return dataProvider.hintPartialRevealText
+        case .partialReveal:  return dataProvider.hintShowAnswerText
+        case .fullReveal:     return dataProvider.hintDoneText
+        }
+    }
+
     // 给 SettingsSheet 中的键盘类型提示
     var preferredKeyboardType: UIKeyboardType {
         switch mode {
@@ -122,6 +156,9 @@ class NumberTrainer: ObservableObject {
         withAnimation(.spring()) {
             answerState = .waiting
             userInput = ""
+            hintStage = .none
+            hintMessage = ""
+            hintVisual = ""
             let provider = dataProvider
 
             switch mode {
@@ -182,22 +219,80 @@ class NumberTrainer: ObservableObject {
         }
 
         if speakNow {
-            replay()
+            replayFull()
         }
     }
 
-    // MARK: - 重放（使用当前自适应语速）
+    // MARK: - 分层重放（P0）
     func replay() {
+        replayFull()
+    }
+
+    func replayFull() {
         SpeechManager.shared.speak(sentenceContext, rate: currentRate)
     }
 
-    // MARK: - 验证答案（若无输入则直接揭晓，不计分）
-    func verify() {
-        // 没有输入 → 直接揭晓，不影响统计
-        guard canVerify else {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+    func replayFocused() {
+        SpeechManager.shared.speak(speakableContent, rate: currentRate)
+    }
+
+    func replaySlow() {
+        let slowRate = max(0.33, currentRate - 0.1)
+        SpeechManager.shared.speak(sentenceContext, rate: slowRate)
+    }
+
+    // MARK: - 渐进提示（P1）
+    func requestHint() {
+        guard answerState == .waiting else { return }
+
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            switch hintStage {
+            case .none:
+                hintStage = .replayFull
+                hintMessage = dataProvider.hintReplayFullMessage
+                replayFull()
+
+            case .replayFull:
+                hintStage = .replayFocused
+                hintMessage = dataProvider.hintReplayFocusedMessage
+                replayFocused()
+
+            case .replayFocused:
+                hintStage = .structure
+                hintMessage = structureHintText
+
+            case .structure:
+                hintStage = .scaffold
+                hintMessage = dataProvider.hintScaffoldMessage
+                hintVisual = buildScaffold()
+
+            case .scaffold:
+                hintStage = .partialReveal
+                hintMessage = dataProvider.hintPartialRevealMessage
+                hintVisual = buildPartialReveal()
+
+            case .partialReveal:
+                hintStage = .fullReveal
+                hintMessage = dataProvider.hintShowAnswerMessage
                 answerState = .revealed
+
+            case .fullReveal:
+                break
             }
+        }
+    }
+
+    // MARK: - 验证答案
+    func verify() {
+        // 没有输入时不直接揭晓，先引导继续听
+        guard canVerify else {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                if hintStage == .none {
+                    hintStage = .replayFull
+                }
+                hintMessage = dataProvider.emptyInputPrompt
+            }
+            replayFull()
             return
         }
 
@@ -216,7 +311,7 @@ class NumberTrainer: ObservableObject {
         }
 
         let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(isCorrect ? .success : .error)
+        generator.notificationOccurred(isCorrect ? .success : .warning)
     }
 
     // MARK: - 答案比对（宽松匹配）
@@ -254,5 +349,105 @@ class NumberTrainer: ObservableObject {
         r = r.components(separatedBy: .whitespaces).filter { !$0.isEmpty }.joined(separator: " ")
 
         return r
+    }
+
+    // MARK: - 视觉支架
+    private func buildScaffold() -> String {
+        switch mode {
+        case .number:
+            return String(repeating: "_", count: max(2, currentDisplay.filter { $0.isNumber }.count))
+
+        case .phoneNumber:
+            let segments = currentDisplay.split(separator: " ")
+            guard let prefix = segments.first else { return "__ __ __ __ __" }
+            return "\(prefix) __ __ __ __"
+
+        case .price:
+            return "__,__ €"
+
+        case .time:
+            if currentDisplay.contains("h") { return "__h__" }
+            return "__:__"
+
+        case .year:
+            return "____"
+
+        case .month:
+            let parts = currentDisplay.split(separator: " ")
+            if let last = parts.last {
+                return "__ \(last)"
+            }
+            return "__ ____"
+
+        case .trainNumber, .flightNumber:
+            let segments = currentDisplay.split(separator: " ")
+            guard let prefix = segments.first else { return "____" }
+            return "\(prefix) ____"
+        }
+    }
+
+    private func buildPartialReveal() -> String {
+        switch mode {
+        case .number:
+            return maskDigits(in: currentDisplay, visibleCount: max(1, currentDisplay.filter { $0.isNumber }.count / 2))
+
+        case .phoneNumber:
+            let segments = currentDisplay.split(separator: " ")
+            if segments.count >= 2 {
+                return "\(segments[0]) \(segments[1]) __ __ __"
+            }
+            return currentDisplay
+
+        case .price:
+            let parts = currentDisplay.split(separator: ",", maxSplits: 1, omittingEmptySubsequences: false)
+            if let integerPart = parts.first {
+                return "\(integerPart),__ €"
+            }
+            return "__,__ €"
+
+        case .time:
+            if let hIndex = currentDisplay.firstIndex(of: "h") {
+                let hour = String(currentDisplay[..<hIndex])
+                return "\(hour)h__"
+            }
+            if let cIndex = currentDisplay.firstIndex(of: ":") {
+                let hour = String(currentDisplay[..<cIndex])
+                return "\(hour):__"
+            }
+            return "__:__"
+
+        case .year:
+            return maskDigits(in: currentDisplay, visibleCount: 2)
+
+        case .month:
+            let parts = currentDisplay.split(separator: " ")
+            if parts.count >= 3 {
+                return "\(parts[0]) \(parts[1]) ____"
+            }
+            if parts.count == 2 {
+                return "\(parts[0]) ____"
+            }
+            return currentDisplay
+
+        case .trainNumber, .flightNumber:
+            let segments = currentDisplay.split(separator: " ")
+            guard segments.count >= 2 else { return currentDisplay }
+            let prefix = String(segments[0])
+            let number = String(segments[1])
+            let visible = max(1, min(2, number.filter { $0.isNumber }.count - 1))
+            return "\(prefix) \(maskDigits(in: number, visibleCount: visible))"
+        }
+    }
+
+    private func maskDigits(in text: String, visibleCount: Int) -> String {
+        var visible = visibleCount
+        return String(text.map { char in
+            guard char.isNumber else { return char }
+            if visible > 0 {
+                visible -= 1
+                return char
+            }
+            return "_"
+        })
     }
 }
