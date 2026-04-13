@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ImpressionistGlassCard<Content: View>: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("listeningAmbientMotionEnabled") private var ambientMotionEnabled = true
     let cornerRadius: CGFloat
     @ViewBuilder let content: Content
     @State private var borderRotation: Double = 0
@@ -36,6 +38,7 @@ struct ImpressionistGlassCard<Content: View>: View {
             content
         }
         .onAppear {
+            guard ambientMotionEnabled, !reduceMotion else { return }
             withAnimation(.linear(duration: 8).repeatForever(autoreverses: false)) {
                 borderRotation = 360
             }

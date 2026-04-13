@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct ChiffreHomeView: View {
-    @StateObject private var trainer = NumberTrainer()
+    @ObservedObject var trainer: NumberTrainer
     @ObservedObject private var lm = LanguageVoiceManager.shared
-    @State private var showSettings = false
+    @State private var languageAnimationToken = 0
 
     var body: some View {
         GeometryReader { proxy in
@@ -12,37 +12,37 @@ struct ChiffreHomeView: View {
             ZStack {
                 ListeningBackground()
 
-                VStack(spacing: metrics.sectionSpacing) {
-                    header(metrics: metrics)
-                        .padding(.bottom, trainer.answerState == .waiting ? 26 : 10)
+                VStack(spacing: 0) {
+                    ListeningHomeHeader(
+                        metrics: metrics,
+                        currentLanguage: lm.currentLanguage,
+                        appName: trainer.dataProvider.appName,
+                        languageSelection: languageSelection,
+                        modeSelection: modeTrigger
+                    )
+                    .padding(.bottom, metrics.sectionSpacing)
 
                     ListeningStageView(
-                        mode: trainer.mode,
                         answerState: trainer.answerState,
                         currentDisplay: trainer.currentDisplay,
                         annotation: trainer.revealAnnotation,
                         footnote: stageFootnote,
                         accent: accentColor,
                         textColor: answerTextColor,
-                        borderColor: accentColor,
                         metrics: metrics,
                         replay: trainer.replayFull
                     )
+                    .padding(.bottom, metrics.sectionSpacing)
 
-                    ListeningSupportPanel(
-                        hasHintContent: trainer.hasHintContent,
-                        hintMessage: trainer.hintMessage,
-                        hintVisual: trainer.hintVisual,
-                        answerState: trainer.answerState,
-                        feedbackIcon: feedbackIcon,
-                        feedbackTitle: feedbackTitle,
-                        feedbackColor: accentColor,
-                        sentenceView: highlightedSentenceText(),
-                        hintTitle: compactHintTitle,
-                        replay: trainer.replayFull,
-                        replayFocused: trainer.replayFocused,
-                        requestHint: trainer.requestHint
-                    )
+                    if trainer.answerState != .waiting {
+                        ListeningSupportPanel(
+                            feedbackIcon: feedbackIcon,
+                            feedbackTitle: feedbackTitle,
+                            feedbackColor: accentColor,
+                            sentenceView: highlightedSentenceText()
+                        )
+                        .padding(.bottom, 28)
+                    }
 
                     Spacer(minLength: 0)
 
@@ -50,8 +50,7 @@ struct ChiffreHomeView: View {
                         primaryTitle: trainer.answerState == .waiting ? trainer.dataProvider.revealText : trainer.dataProvider.nextText,
                         primaryIcon: trainer.answerState == .waiting ? "checkmark.circle.fill" : "arrow.right.circle.fill",
                         primaryGradient: trainer.answerState == .correct ? ListeningCanvasTheme.successGradient : ListeningCanvasTheme.primaryGradient,
-                        primaryAction: primaryAction,
-                        settingsAction: { showSettings = true }
+                        primaryAction: primaryAction
                     )
                 }
                 .padding(.horizontal, metrics.horizontalPadding)
@@ -59,59 +58,48 @@ struct ChiffreHomeView: View {
                 .padding(.bottom, metrics.bottomPadding)
             }
         }
-        .sheet(isPresented: $showSettings) {
-            SettingsSheet(trainer: trainer)
-                .presentationDetents([.height(520)])
-                .presentationCornerRadius(30)
+    }
+
+    private var languageSelection: some View {
+        Menu {
+            ForEach(AppLanguage.allCases) { language in
+                Button(language.icon + " " + language.displayName) {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.68)) {
+                        lm.currentLanguage = language
+                    }
+                    languageAnimationToken += 1
+                }
+            }
+        } label: {
+            ListeningLanguageButton(
+                language: lm.currentLanguage,
+                animationToken: languageAnimationToken
+            )
+        }
+        .buttonStyle(.plain)
+        .onChange(of: lm.currentLanguage) {
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.52)) {
+                languageAnimationToken += 1
+            }
         }
     }
 
-    private func header(metrics: ListeningCanvasTheme.Metrics) -> some View {
-        VStack(alignment: .leading, spacing: trainer.answerState == .waiting ? 24 : 14) {
-            HStack {
-                Menu {
-                    ForEach(AppLanguage.allCases) { language in
-                        Button(language.icon + " " + language.displayName) {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                                lm.currentLanguage = language
-                            }
-                        }
+    private var modeTrigger: some View {
+        Menu {
+            ForEach(GameMode.allCases) { mode in
+                Button {
+                    withAnimation(.spring(response: 0.34, dampingFraction: 0.8)) {
+                        trainer.mode = mode
                     }
+                    trainer.generateNew(speakNow: false)
                 } label: {
-                    HStack(spacing: 8) {
-                        Text(lm.currentLanguage.icon)
-                        Text(lm.currentLanguage.displayName)
-                            .lineLimit(1)
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 10, weight: .bold))
-                    }
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(ListeningCanvasTheme.body)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(
-                        Capsule()
-                            .fill(ListeningCanvasTheme.pillGradient)
-                    )
-                    .overlay(
-                        Capsule()
-                            .stroke(ListeningCanvasTheme.panelStroke, lineWidth: 1)
-                    )
+                    Label(mode.rawValue, systemImage: mode.icon)
                 }
-                .buttonStyle(.plain)
-
-                Spacer()
             }
-
-            Text(trainer.dataProvider.appName)
-                .font(SurrealTheme.Typography.title(metrics.brandSize))
-                .foregroundStyle(ListeningCanvasTheme.title)
-                .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
-                .contentTransition(.opacity)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.top, trainer.answerState == .waiting ? 8 : 0)
-                .id(lm.currentLanguage)
+        } label: {
+            ListeningModeTrigger(mode: trainer.mode)
         }
+        .buttonStyle(.plain)
     }
 
     private var accentColor: Color {
@@ -129,7 +117,7 @@ struct ChiffreHomeView: View {
 
     private var stageFootnote: String {
         switch trainer.answerState {
-        case .waiting: return "先听，再写；点验证就直接揭晓。"
+        case .waiting: return "先听，再写；点验证就直接显示答案。"
         case .revealed: return "数字已展开，继续下一题。"
         case .correct: return trainer.dataProvider.successText
         case .wrong: return trainer.dataProvider.gentleWrongText
@@ -147,15 +135,11 @@ struct ChiffreHomeView: View {
 
     private var feedbackTitle: String {
         switch trainer.answerState {
-        case .waiting: return ""
+        case .waiting: return "准备好时就揭晓答案"
         case .revealed: return "答案已揭晓"
         case .correct: return trainer.dataProvider.successText
         case .wrong: return trainer.dataProvider.gentleWrongText
         }
-    }
-
-    private var compactHintTitle: String {
-        trainer.hasHintContent ? "再显一位" : "提示一位"
     }
 
     private func primaryAction() {
@@ -173,15 +157,132 @@ struct ChiffreHomeView: View {
 
         guard !highlight.isEmpty,
               let range = sentence.range(of: highlight, options: .caseInsensitive) else {
-            return Text(sentence).foregroundColor(baseColor)
+            return Text(sentence).foregroundStyle(baseColor)
         }
 
         let before = String(sentence[..<range.lowerBound])
         let emphasized = String(sentence[range])
         let after = String(sentence[range.upperBound...])
 
-        return Text(before).foregroundColor(baseColor)
-            + Text(emphasized).foregroundColor(ListeningCanvasTheme.sunrise).bold()
-            + Text(after).foregroundColor(baseColor)
+        return Text(before).foregroundStyle(baseColor)
+            + Text(emphasized).foregroundStyle(ListeningCanvasTheme.sunrise).bold()
+            + Text(after).foregroundStyle(baseColor)
+    }
+}
+
+struct ListeningHomeHeader<LanguageSelection: View, ModeSelection: View>: View {
+    let metrics: ListeningCanvasTheme.Metrics
+    let currentLanguage: AppLanguage
+    let appName: String
+    let languageSelection: LanguageSelection
+    let modeSelection: ModeSelection
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: metrics.headerSpacing) {
+            HStack(alignment: .top) {
+                languageSelection
+                Spacer(minLength: 16)
+            }
+            .padding(.bottom, 10)
+
+            Text(appName)
+                .font(SurrealTheme.Typography.title(metrics.brandSize))
+                .foregroundStyle(ListeningCanvasTheme.title)
+                .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.45), radius: 10, y: 5)
+                .contentTransition(.opacity)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .id(currentLanguage)
+                .padding(.top, 22)
+                .padding(.bottom, 26)
+
+            HStack {
+                modeSelection
+                Spacer(minLength: 16)
+            }
+            .padding(.top, 4)
+        }
+    }
+}
+
+struct ListeningLanguageButton: View {
+    let language: AppLanguage
+    let animationToken: Int
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(language.icon)
+                .font(.system(size: 16))
+
+            Text(language.displayName)
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+
+            Image(systemName: "chevron.down")
+                .font(.system(size: 11, weight: .bold))
+                .symbolEffect(.bounce, value: animationToken)
+
+            Image(systemName: "sparkles")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(ListeningCanvasTheme.sunrise.opacity(0.9))
+                .symbolEffect(.pulse.byLayer, value: animationToken)
+                .scaleEffect(animationToken.isMultiple(of: 2) ? 0.92 : 1.04)
+        }
+        .foregroundStyle(ListeningCanvasTheme.title)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
+        .background(
+            Capsule()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.64),
+                            SurrealTheme.colors.lavenderMist.opacity(0.3),
+                            SurrealTheme.colors.skyDawn.opacity(0.22)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .overlay(
+            Capsule()
+                .stroke(ListeningCanvasTheme.panelStroke, lineWidth: 1)
+        )
+        .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.16), radius: 10, y: 4)
+        .accessibilityLabel("语言：\(language.displayName)")
+        .accessibilityHint("点击切换语言")
+    }
+}
+
+struct ListeningModeTrigger: View {
+    let mode: GameMode
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Catégorie")
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(ListeningCanvasTheme.secondary)
+                .textCase(.uppercase)
+                .tracking(1.2)
+
+            HStack(spacing: 8) {
+                Image(systemName: mode.icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .accessibilityHidden(true)
+
+                Text(mode.rawValue)
+                    .font(.system(size: 17, weight: .semibold, design: .serif))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(ListeningCanvasTheme.title)
+        }
+        .padding(.vertical, 6)
+        .overlay(alignment: .bottomLeading) {
+            Rectangle()
+                .fill(ListeningCanvasTheme.panelStroke.opacity(0.9))
+                .frame(width: 138, height: 1)
+                .offset(y: 10)
+        }
+        .accessibilityLabel(mode.rawValue)
+        .accessibilityHint("点击更改类别")
     }
 }

@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ListeningBackground: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("listeningAmbientMotionEnabled") private var ambientMotionEnabled = true
     @State private var drift = false
     @State private var shimmer = false
 
@@ -10,7 +12,7 @@ struct ListeningBackground: View {
                 ListeningCanvasTheme.background
 
                 Circle()
-                    .fill(ListeningCanvasTheme.dawn.opacity(0.22))
+                    .fill(ListeningCanvasTheme.mist.opacity(0.2))
                     .frame(width: proxy.size.width * 0.72, height: proxy.size.width * 0.72)
                     .blur(radius: 70)
                     .offset(x: drift ? -90 : -30, y: drift ? -180 : -130)
@@ -23,7 +25,7 @@ struct ListeningBackground: View {
 
                 Circle()
                     .trim(from: 0.08, to: 0.74)
-                    .stroke(ListeningCanvasTheme.dawn.opacity(0.16), style: StrokeStyle(lineWidth: 24, lineCap: .round))
+                    .stroke(ListeningCanvasTheme.mist.opacity(0.14), style: StrokeStyle(lineWidth: 24, lineCap: .round))
                     .frame(width: proxy.size.width * 1.08, height: proxy.size.width * 1.08)
                     .offset(x: proxy.size.width * 0.28, y: proxy.size.height * 0.14)
                     .rotationEffect(.degrees(drift ? 10 : -8))
@@ -51,6 +53,7 @@ struct ListeningBackground: View {
             }
             .ignoresSafeArea()
             .onAppear {
+                guard ambientMotionEnabled, !reduceMotion else { return }
                 withAnimation(.easeInOut(duration: 8).repeatForever(autoreverses: true)) {
                     drift.toggle()
                 }
@@ -74,6 +77,8 @@ struct ListeningBackground: View {
 }
 
 struct ListeningSunriseGlyph: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("listeningAmbientMotionEnabled") private var ambientMotionEnabled = true
     let accent: Color
     @State private var rise = false
     private let tallBars: [CGFloat] = [14, 22, 34, 20, 12]
@@ -115,6 +120,7 @@ struct ListeningSunriseGlyph: View {
             }
         }
         .onAppear {
+            guard ambientMotionEnabled, !reduceMotion else { return }
             rise = true
         }
     }

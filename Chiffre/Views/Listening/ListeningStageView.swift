@@ -1,14 +1,12 @@
 import SwiftUI
 
 struct ListeningStageView: View {
-    let mode: GameMode
     let answerState: AnswerState
     let currentDisplay: String
     let annotation: String
     let footnote: String
     let accent: Color
     let textColor: Color
-    let borderColor: Color
     let metrics: ListeningCanvasTheme.Metrics
     let replay: () -> Void
 
@@ -18,31 +16,26 @@ struct ListeningStageView: View {
                 stageBrushwork
 
                 VStack(alignment: .leading, spacing: 18) {
-                    HStack {
-                        ListeningModeBadge(mode: mode)
-                        Spacer()
-                    }
-
                     Spacer(minLength: 0)
 
                     Group {
                         if answerState == .waiting {
                             ListeningSunriseGlyph(accent: accent)
                         } else {
-                            VStack(spacing: 14) {
+                            VStack(spacing: 16) {
                                 Text(currentDisplay)
                                     .font(stageFont(for: currentDisplay))
                                     .foregroundStyle(textColor)
                                     .multilineTextAlignment(.center)
                                     .minimumScaleFactor(0.42)
-                                    .lineLimit(2)
+                                    .lineLimit(3)
 
                                 Text(annotation)
-                                    .font(.system(size: 16, weight: .semibold, design: .serif))
-                                    .foregroundStyle(ListeningCanvasTheme.sunrise)
+                                    .font(.system(size: 17, weight: .semibold, design: .serif))
+                                    .foregroundStyle(ListeningCanvasTheme.title.opacity(0.82))
                                     .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 18)
-                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 11)
                                     .background(
                                         Capsule()
                                             .fill(Color.white.opacity(0.28))
@@ -59,14 +52,19 @@ struct ListeningStageView: View {
                     Spacer(minLength: 0)
 
                     Text(footnote)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
                         .foregroundStyle(ListeningCanvasTheme.body)
+                        .frame(maxWidth: .infinity)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(3)
                 }
                 .padding(metrics.stagePadding)
             }
             .frame(height: metrics.stageHeight)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(answerState == .waiting ? "重听当前题目" : "重听当前题目并再次查看答案")
+        .accessibilityHint("双击可再次播放当前内容")
     }
 
     private var stageBrushwork: some View {
@@ -86,36 +84,12 @@ struct ListeningStageView: View {
     }
 
     private func stageFont(for text: String) -> Font {
-        if text.count > 12 {
-            return SurrealTheme.Typography.number(52)
+        if text.count > 14 {
+            return SurrealTheme.Typography.number(46)
         }
-        if text.count > 6 {
-            return SurrealTheme.Typography.number(70)
+        if text.count > 8 {
+            return SurrealTheme.Typography.number(60)
         }
-        return SurrealTheme.Typography.number(90)
-    }
-}
-
-struct ListeningModeBadge: View {
-    let mode: GameMode
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: mode.icon)
-            Text(mode.rawValue)
-                .lineLimit(1)
-        }
-        .font(.system(size: 11, weight: .semibold, design: .rounded))
-        .foregroundStyle(ListeningCanvasTheme.title)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 7)
-        .background(
-            Capsule()
-                .fill(ListeningCanvasTheme.pillGradient)
-        )
-        .overlay(
-            Capsule()
-                .stroke(ListeningCanvasTheme.panelStroke, lineWidth: 1)
-        )
+        return SurrealTheme.Typography.number(78)
     }
 }

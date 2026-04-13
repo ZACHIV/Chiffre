@@ -31,8 +31,8 @@ enum ListeningCanvasTheme {
 
     static let primaryGradient = LinearGradient(
         colors: [
-            Color(red: 1.0, green: 0.604, blue: 0.62),
-            Color(red: 0.996, green: 0.812, blue: 0.937)
+            Color(red: 0.50, green: 0.56, blue: 0.79),
+            Color(red: 0.73, green: 0.80, blue: 0.92)
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
@@ -50,8 +50,8 @@ enum ListeningCanvasTheme {
 
     static let successGradient = LinearGradient(
         colors: [
-            Color(red: 1.0, green: 0.604, blue: 0.62),
-            Color(red: 0.996, green: 0.812, blue: 0.937)
+            Color(red: 0.57, green: 0.73, blue: 0.71),
+            Color(red: 0.78, green: 0.88, blue: 0.84)
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
@@ -60,15 +60,17 @@ enum ListeningCanvasTheme {
     struct Metrics {
         let size: CGSize
 
-        var horizontalPadding: CGFloat { size.width > 430 ? 28 : 20 }
-        var topPadding: CGFloat { size.height < 760 ? 18 : 28 }
-        var bottomPadding: CGFloat { size.height < 760 ? 14 : 22 }
-        var sectionSpacing: CGFloat { size.height < 760 ? 22 : 30 }
-        var brandSize: CGFloat { size.width > 430 ? 56 : 48 }
-        var stageHeight: CGFloat { min(max(size.height * 0.26, 220), 286) }
+        var horizontalPadding: CGFloat { size.width > 430 ? 30 : 22 }
+        var topPadding: CGFloat { size.height < 760 ? 24 : 34 }
+        var bottomPadding: CGFloat { size.height < 760 ? 24 : 30 }
+        var sectionSpacing: CGFloat { size.height < 760 ? 22 : 34 }
+        var brandSize: CGFloat { size.width > 430 ? 64 : 58 }
+        var stageHeight: CGFloat { min(max(size.height * 0.31, 254), 322) }
         var stageCornerRadius: CGFloat { size.height < 760 ? 30 : 36 }
         var panelCornerRadius: CGFloat { 26 }
-        var stagePadding: CGFloat { size.height < 760 ? 20 : 24 }
+        var stagePadding: CGFloat { size.height < 760 ? 24 : 30 }
         var actionRowSpacing: CGFloat { 14 }
+        var headerSpacing: CGFloat { size.height < 760 ? 18 : 22 }
+        var modeControlHeight: CGFloat { size.height < 760 ? 42 : 48 }
     }
 }

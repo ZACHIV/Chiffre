@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var trainer = NumberTrainer()
+
     // 定制 TabView 外观
     init() {
         let appearance = UITabBarAppearance()
@@ -19,22 +21,19 @@ struct ContentView: View {
     
     var body: some View {
         TabView {
-            // 1. 听力 (输入)
-            ChiffreHomeView()
+            ChiffreHomeView(trainer: trainer)
                 .tabItem {
                     Label("Écouter", systemImage: "ear.and.waveform")
                 }
-            
-            // 2. 口语 (输出)
-            SpeakingPracticeView()
-                .tabItem {
-                    Label("Parler", systemImage: "mic.fill")
-                }
-            
-            // 3. 列表 (查阅)
+
             ReferenceView()
                 .tabItem {
-                    Label("Liste", systemImage: "square.grid.3x3.fill") // 使用网格图标
+                    Label("Liste", systemImage: "square.grid.3x3.fill")
+                }
+
+            SettingsView(trainer: trainer)
+                .tabItem {
+                    Label("Réglages", systemImage: "slider.horizontal.3")
                 }
         }
         .tint(SurrealTheme.colors.deepIndigo)
