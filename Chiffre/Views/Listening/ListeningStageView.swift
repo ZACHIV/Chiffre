@@ -48,6 +48,7 @@ struct ListeningStageView: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
+                    .offset(y: -metrics.stageContentLift)
 
                     Spacer(minLength: 0)
 

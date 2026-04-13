@@ -63,24 +63,31 @@ struct SpeakingPracticeView: View {
                     VStack(spacing: 0) {
                         
                         // A. 数字区域
-                        VStack(spacing: 8) {
-                            Text("\(trainer.currentNumber)")
-                                .font(SurrealTheme.Typography.number(110))
-                                .foregroundStyle(textColor)
-                                .contentTransition(.numericText())
-                                .shadow(color: textColor.opacity(0.2), radius: 8, y: 4)
-                            
-                            HStack(spacing: 6) {
-                                Image(systemName: "speaker.wave.2.fill")
-                                Text(dp.speakTapHint)
-                            }
-                            .font(.caption)
-                            .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.5))
-                        }
-                        .onTapGesture {
+                        Button {
                             trainer.speakTarget()
+                        } label: {
+                            VStack(spacing: 8) {
+                                Text("\(trainer.currentNumber)")
+                                    .font(SurrealTheme.Typography.number(110))
+                                    .foregroundStyle(textColor)
+                                    .contentTransition(.numericText())
+                                    .shadow(color: textColor.opacity(0.2), radius: 8, y: 4)
+
+                                HStack(spacing: 6) {
+                                    Image(systemName: "speaker.wave.2.fill")
+                                        .accessibilityHidden(true)
+                                    Text(dp.speakTapHint)
+                                }
+                                .font(.caption)
+                                .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.5))
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
                         .frame(height: 180)
+                        .accessibilityLabel("播放当前练习数字")
+                        .accessibilityHint("双击可再次收听当前发音")
                         
                         // B. 动态反馈区域
                         VStack(spacing: 8) {

@@ -5,19 +5,24 @@ struct ListeningSupportPanel: View {
     let feedbackTitle: String
     let feedbackColor: Color
     let sentenceView: Text
+    let sentenceAccessibilityLabel: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 10) {
                 sentenceView
-                    .font(.system(size: 24, weight: .medium, design: .rounded))
+                    .font(.system(size: 22, weight: .medium, design: .rounded))
                     .foregroundStyle(ListeningCanvasTheme.body)
                     .multilineTextAlignment(.leading)
                     .lineSpacing(6)
                     .minimumScaleFactor(0.78)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityHidden(true)
 
                 HStack(spacing: 8) {
                     Image(systemName: feedbackIcon)
+                        .accessibilityHidden(true)
                         .foregroundStyle(feedbackColor)
                     Text(feedbackTitle)
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
@@ -28,6 +33,11 @@ struct ListeningSupportPanel: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 8)
+            .layoutPriority(1)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("句子提示")
+            .accessibilityValue(sentenceAccessibilityLabel)
+            .accessibilityHint(feedbackTitle)
         }
         .accessibilityElement(children: .contain)
     }

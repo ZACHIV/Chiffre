@@ -11,6 +11,16 @@ enum GameMode: String, CaseIterable, Identifiable {
     case month       = "Mois (月份)"
     case trainNumber = "Train (火车号)"
     case flightNumber = "Vol (航班号)"
+    case address     = "Adresse (地址)"
+    case reservation = "Réservation (预约)"
+    case cafeOrder   = "Commande (点单)"
+    case directions  = "Trajet (问路)"
+    case smallTalk   = "Conversation (寒暄)"
+    case service     = "Service (生活)"
+    case shopping    = "Courses (购物)"
+    case transport   = "Transports (出行)"
+    case health      = "Santé (健康)"
+    case workday     = "Travail (工作)"
 
     var id: String { self.rawValue }
 
@@ -24,8 +34,79 @@ enum GameMode: String, CaseIterable, Identifiable {
         case .month:        return "calendar.circle.fill"
         case .trainNumber:  return "tram.fill"
         case .flightNumber: return "airplane"
+        case .address:      return "map.fill"
+        case .reservation:  return "bookmark.circle.fill"
+        case .cafeOrder:    return "cup.and.saucer.fill"
+        case .directions:   return "location.north.line.fill"
+        case .smallTalk:    return "message.fill"
+        case .service:      return "bell.badge.fill"
+        case .shopping:     return "bag.fill"
+        case .transport:    return "bus.fill"
+        case .health:       return "cross.case.fill"
+        case .workday:      return "briefcase.fill"
         }
     }
+
+    var summary: String {
+        switch self {
+        case .number:
+            return "基础数字与口头报数"
+        case .phoneNumber:
+            return "联系电话与号码分组"
+        case .price:
+            return "价格、金额与付款表达"
+        case .time:
+            return "时间、约会与开门时段"
+        case .year:
+            return "年份、年代与历史时间点"
+        case .month:
+            return "日期、月份与日程安排"
+        case .trainNumber:
+            return "列车编号与站台广播"
+        case .flightNumber:
+            return "航班号与登机广播"
+        case .address:
+            return "门牌、楼层与地址信息"
+        case .reservation:
+            return "订位、人数与预约时间"
+        case .cafeOrder:
+            return "咖啡馆点单与日常购买"
+        case .directions:
+            return "问路、转弯与距离表达"
+        case .smallTalk:
+            return "寒暄、近况与轻社交"
+        case .service:
+            return "药店、商店与生活服务"
+        case .shopping:
+            return "超市、尺码与结账对话"
+        case .transport:
+            return "地铁、公交与出租出行"
+        case .health:
+            return "症状、药品与就诊沟通"
+        case .workday:
+            return "会议、同事与工作安排"
+        }
+    }
+
+    var isRangeConfigurable: Bool {
+        self == .number
+    }
+
+    var isScenarioBased: Bool {
+        switch self {
+        case .address, .reservation, .cafeOrder, .directions, .smallTalk, .service, .shopping, .transport, .health, .workday:
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+struct ListeningScenario {
+    let display: String
+    let speakable: String
+    let sentence: String
+    let annotation: String
 }
 
 // MARK: - 答题状态
@@ -68,6 +149,7 @@ class NumberTrainer: ObservableObject {
 
     private(set) var speakableContent: String = ""
     private(set) var sentenceContext: String = ""
+    private(set) var displayAnnotation: String = ""
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -113,6 +195,10 @@ class NumberTrainer: ObservableObject {
     }
 
     var revealAnnotation: String {
+        if !displayAnnotation.isEmpty {
+            return displayAnnotation
+        }
+
         if let spelled = spelledOutDisplay {
             return spelled
         }
@@ -157,6 +243,10 @@ class NumberTrainer: ObservableObject {
             hintMessage = ""
             hintVisual = ""
             revealedHintDigits = 0
+            currentDisplay = ""
+            speakableContent = ""
+            sentenceContext = ""
+            displayAnnotation = ""
             let provider = dataProvider
 
             switch mode {
@@ -209,11 +299,24 @@ class NumberTrainer: ObservableObject {
                 currentDisplay = "\(airline.0) \(flightNum)"
                 let code = airline.0.map { String($0) }.joined(separator: ", ")
                 speakableContent = "\(code), \(flightNum)"
+
+            case .address, .reservation, .cafeOrder, .directions, .smallTalk, .service, .shopping, .transport, .health, .workday:
+                if let scenario = provider.scenarioPrompt(for: mode) {
+                    currentDisplay = scenario.display
+                    speakableContent = scenario.speakable
+                    sentenceContext = scenario.sentence
+                    displayAnnotation = scenario.annotation
+                    break
+                }
+                currentDisplay = ""
+                speakableContent = ""
+                sentenceContext = ""
             }
 
-            // P1: 构建句子语境（数字嵌入真实句子中播放）
-            let template = provider.sentenceTemplate(for: mode)
-            sentenceContext = template.replacingOccurrences(of: "{X}", with: speakableContent)
+            if sentenceContext.isEmpty {
+                let template = provider.sentenceTemplate(for: mode)
+                sentenceContext = template.replacingOccurrences(of: "{X}", with: speakableContent)
+            }
         }
 
         if speakNow {
@@ -358,6 +461,9 @@ class NumberTrainer: ObservableObject {
             let segments = currentDisplay.split(separator: " ")
             guard let prefix = segments.first else { return "____" }
             return "\(prefix) ____"
+
+        case .address, .reservation, .cafeOrder, .directions, .smallTalk, .service, .shopping, .transport, .health, .workday:
+            return "先听关键词，再听整句。"
         }
     }
 
@@ -411,6 +517,11 @@ class NumberTrainer: ObservableObject {
             let number = String(segments[1])
             let visible = max(1, min(2, number.filter { $0.isNumber }.count - 1))
             return "\(prefix) \(maskDigits(in: number, visibleCount: visible))"
+
+        case .address, .reservation, .cafeOrder, .directions, .smallTalk, .service, .shopping, .transport, .health, .workday:
+            let words = currentDisplay.split(separator: " ")
+            let visibleWords = words.prefix(2).joined(separator: " ")
+            return words.count > 2 ? "\(visibleWords) ..." : visibleWords
         }
     }
 

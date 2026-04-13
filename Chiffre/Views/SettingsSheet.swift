@@ -9,6 +9,16 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 Section {
+                    SettingsHeroCard(
+                        languageName: lm.currentLanguage.displayName,
+                        modeName: trainer.mode.rawValue,
+                        modeSummary: trainer.mode.summary
+                    )
+                    .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 10, trailing: 0))
+                    .listRowBackground(Color.clear)
+                }
+
+                Section {
                     SettingsSummaryRow(
                         title: "语言",
                         value: lm.currentLanguage.displayName,
@@ -18,10 +28,10 @@ struct SettingsView: View {
                     SettingsSummaryRow(
                         title: "类别",
                         value: trainer.mode.rawValue,
-                        detail: "在首页标题下方直接切换"
+                        detail: trainer.mode.summary
                     )
 
-                    if trainer.mode == .number {
+                    if trainer.mode.isRangeConfigurable {
                         NavigationLink {
                             RangeSettingsView(trainer: trainer)
                         } label: {
@@ -87,6 +97,67 @@ struct SettingsView: View {
             lm.selectedFrenchVoice.displayName
         case .spanish:
             lm.selectedSpanishVoice.displayName
+        }
+    }
+}
+
+struct SettingsHeroCard: View {
+    let languageName: String
+    let modeName: String
+    let modeSummary: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Écoute du quotidien")
+                .font(SurrealTheme.Typography.header(28))
+                .foregroundStyle(ListeningCanvasTheme.title)
+
+            Text("把语言、场景和语速压在同一套安静的节奏里，让训练更像真实生活。")
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundStyle(ListeningCanvasTheme.secondary)
+
+            Rectangle()
+                .fill(ListeningCanvasTheme.canvasStroke.opacity(0.6))
+                .frame(height: 1)
+
+            SettingsHeroLine(title: "Langue", value: languageName)
+            SettingsHeroLine(title: "Focus", value: modeName)
+
+            Text(modeSummary)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(ListeningCanvasTheme.water)
+        }
+        .padding(22)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color.white.opacity(0.28))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(ListeningCanvasTheme.canvasStroke.opacity(0.7), lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct SettingsHeroLine: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(ListeningCanvasTheme.secondary)
+                .textCase(.uppercase)
+                .tracking(1)
+
+            Spacer()
+
+            Text(value)
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(ListeningCanvasTheme.title)
+                .lineLimit(1)
         }
     }
 }

@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ReferenceView: View {
+    @ObservedObject private var lm = LanguageVoiceManager.shared
+
     struct NumberEntry: Identifiable {
         let number: Int
         let isInfinity: Bool
@@ -38,53 +40,108 @@ struct ReferenceView: View {
 
     var body: some View {
         ZStack {
-            SurrealTheme.mainBackground
+            ListeningBackground()
 
-            VStack(spacing: 0) {
-                Text("Référence")
-                    .font(SurrealTheme.Typography.title(48))
-                    .foregroundStyle(SurrealTheme.colors.deepIndigo)
-                    .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
-                    .padding(.top, 60)
-                    .padding(.bottom, 4)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 22) {
+                    VStack(spacing: 8) {
+                        Text("Liste")
+                            .font(SurrealTheme.Typography.title(48))
+                            .foregroundStyle(SurrealTheme.colors.deepIndigo)
+                            .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.5), radius: 8, y: 4)
+                            .padding(.top, 60)
 
-                Text("完整数字写法 · 点击即可朗读")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.4))
-                    .tracking(0.3)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 30)
-                    .padding(.bottom, 10)
+                        Text("Les nombres utiles du quotidien")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundStyle(ListeningCanvasTheme.secondary)
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 34) {
+                        Text(lm.currentLanguage == .french ? "完整数字写法 · 点击即可朗读" : "Números completos · toca para escuchar")
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .foregroundStyle(ListeningCanvasTheme.secondary)
+                            .tracking(0.6)
+                    }
+
+                    ReferenceHeroCard(languageName: lm.currentLanguage.displayName)
+                        .padding(.horizontal, 20)
+
+                    VStack(spacing: 18) {
                         ForEach(groups) { group in
-                            VStack(alignment: .leading, spacing: 16) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(group.frenchTitle)
-                                        .font(.custom("Didot", size: 30))
-                                        .foregroundStyle(SurrealTheme.colors.deepIndigo)
-
-                                    Text(group.cnSubtitle)
-                                        .font(.system(size: 10, weight: .regular))
-                                        .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.5))
-                                        .tracking(1)
-                                }
-
-                                VStack(spacing: 10) {
-                                    ForEach(group.entries) { entry in
-                                        ReferenceNumberRow(entry: entry)
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, 20)
+                            ReferenceGroupCard(group: group)
                         }
                     }
-                    .padding(.top, 20)
+                    .padding(.horizontal, 20)
                     .padding(.bottom, 120)
                 }
             }
         }
+    }
+}
+
+struct ReferenceHeroCard: View {
+    let languageName: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Numbers")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(ListeningCanvasTheme.secondary)
+                    .textCase(.uppercase)
+                    .tracking(1.2)
+                Spacer()
+                Text(languageName)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(ListeningCanvasTheme.water)
+            }
+
+            Text("保留完整数字写法，让 Liste 的气质和首页一样安静、清晰、耐看。")
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundStyle(ListeningCanvasTheme.body)
+                .lineSpacing(3)
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color.white.opacity(0.28))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(ListeningCanvasTheme.canvasStroke.opacity(0.7), lineWidth: 1)
+        )
+    }
+}
+
+struct ReferenceGroupCard: View {
+    let group: ReferenceView.NumberGroup
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(group.frenchTitle)
+                    .font(.custom("Didot", size: 28))
+                    .foregroundStyle(ListeningCanvasTheme.title)
+
+                Text(group.cnSubtitle)
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(ListeningCanvasTheme.secondary)
+                    .tracking(0.8)
+            }
+
+            VStack(spacing: 10) {
+                ForEach(group.entries) { entry in
+                    ReferenceNumberRow(entry: entry)
+                }
+            }
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(Color.white.opacity(0.22))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .stroke(ListeningCanvasTheme.canvasStroke.opacity(0.62), lineWidth: 1)
+        )
     }
 }
 
@@ -127,31 +184,36 @@ struct ReferenceNumberRow: View {
             HStack(alignment: .center, spacing: 14) {
                 Text(numeralText)
                     .font(.custom("Didot", size: entry.isInfinity ? 34 : (entry.number >= 100 ? 28 : 30)))
-                    .foregroundStyle(isPressed ? SurrealTheme.colors.coral : SurrealTheme.colors.deepIndigo)
+                    .foregroundStyle(isPressed ? ListeningCanvasTheme.sunrise : ListeningCanvasTheme.title)
                     .frame(width: 54, alignment: .leading)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(spokenText)
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundStyle(SurrealTheme.colors.deepIndigo)
+                        .foregroundStyle(ListeningCanvasTheme.title)
                         .multilineTextAlignment(.leading)
 
                     Text(lm.currentLanguage == .french ? "点击朗读" : "Tocar para escuchar")
                         .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundStyle(SurrealTheme.colors.deepIndigo.opacity(0.38))
+                        .foregroundStyle(ListeningCanvasTheme.secondary)
                 }
 
                 Spacer()
+
+                Image(systemName: "speaker.wave.2.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(ListeningCanvasTheme.secondary)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color.white.opacity(isPressed ? 0.34 : 0.22))
+                    .fill(Color.white.opacity(isPressed ? 0.38 : 0.28))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(SurrealTheme.colors.deepIndigo.opacity(0.08), lineWidth: 1)
+                    .stroke(ListeningCanvasTheme.panelStroke.opacity(0.8), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)

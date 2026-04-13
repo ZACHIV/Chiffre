@@ -12,50 +12,60 @@ struct ChiffreHomeView: View {
             ZStack {
                 ListeningBackground()
 
-                VStack(spacing: 0) {
-                    ListeningHomeHeader(
-                        metrics: metrics,
-                        currentLanguage: lm.currentLanguage,
-                        appName: trainer.dataProvider.appName,
-                        languageSelection: languageSelection,
-                        modeSelection: modeTrigger
-                    )
-                    .padding(.bottom, metrics.sectionSpacing)
-
-                    ListeningStageView(
-                        answerState: trainer.answerState,
-                        currentDisplay: trainer.currentDisplay,
-                        annotation: trainer.revealAnnotation,
-                        footnote: stageFootnote,
-                        accent: accentColor,
-                        textColor: answerTextColor,
-                        metrics: metrics,
-                        replay: trainer.replayFull
-                    )
-                    .padding(.bottom, metrics.sectionSpacing)
-
-                    if trainer.answerState != .waiting {
-                        ListeningSupportPanel(
-                            feedbackIcon: feedbackIcon,
-                            feedbackTitle: feedbackTitle,
-                            feedbackColor: accentColor,
-                            sentenceView: highlightedSentenceText()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        ListeningHomeHeader(
+                            metrics: metrics,
+                            currentLanguage: lm.currentLanguage,
+                            appName: trainer.dataProvider.appName,
+                            appSubtitle: "把最常见的生活口语，拆成可以反复训练的句子。",
+                            languageSelection: languageSelection,
+                            modeSelection: modeTrigger
                         )
-                        .padding(.bottom, 28)
+                        .padding(.bottom, metrics.sectionSpacing)
+
+                        ListeningStageView(
+                            answerState: trainer.answerState,
+                            currentDisplay: trainer.currentDisplay,
+                            annotation: trainer.revealAnnotation,
+                            footnote: stageFootnote,
+                            accent: accentColor,
+                            textColor: answerTextColor,
+                            metrics: metrics,
+                            replay: trainer.replayFull
+                        )
+                        .padding(.bottom, metrics.sectionSpacing)
+
+                        if trainer.answerState != .waiting {
+                            ListeningSupportPanel(
+                                feedbackIcon: feedbackIcon,
+                                feedbackTitle: feedbackTitle,
+                                feedbackColor: accentColor,
+                                sentenceView: highlightedSentenceText(),
+                                sentenceAccessibilityLabel: trainer.sentenceContext
+                            )
+                            .padding(.bottom, 20)
+                        }
+
+                        Spacer(minLength: 0)
                     }
-
-                    Spacer(minLength: 0)
-
-                    ListeningBottomActionRow(
-                        primaryTitle: trainer.answerState == .waiting ? trainer.dataProvider.revealText : trainer.dataProvider.nextText,
-                        primaryIcon: trainer.answerState == .waiting ? "checkmark.circle.fill" : "arrow.right.circle.fill",
-                        primaryGradient: trainer.answerState == .correct ? ListeningCanvasTheme.successGradient : ListeningCanvasTheme.primaryGradient,
-                        primaryAction: primaryAction
-                    )
+                    .frame(minHeight: proxy.size.height - metrics.contentBottomReserve, alignment: .top)
+                    .padding(.horizontal, metrics.horizontalPadding)
+                    .padding(.top, metrics.topPadding)
+                    .padding(.bottom, metrics.bottomPadding)
                 }
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                ListeningBottomActionRow(
+                    primaryTitle: trainer.answerState == .waiting ? trainer.dataProvider.revealText : trainer.dataProvider.nextText,
+                    primaryIcon: trainer.answerState == .waiting ? "checkmark.circle.fill" : "arrow.right.circle.fill",
+                    primaryGradient: trainer.answerState == .correct ? ListeningCanvasTheme.successGradient : ListeningCanvasTheme.primaryGradient,
+                    primaryAction: primaryAction
+                )
                 .padding(.horizontal, metrics.horizontalPadding)
-                .padding(.top, metrics.topPadding)
-                .padding(.bottom, metrics.bottomPadding)
+                .padding(.top, metrics.bottomDockSpacing)
+                .padding(.bottom, metrics.bottomDockSpacing)
+                .background(Color.clear)
             }
         }
     }
@@ -117,8 +127,8 @@ struct ChiffreHomeView: View {
 
     private var stageFootnote: String {
         switch trainer.answerState {
-        case .waiting: return "先听，再写；点验证就直接显示答案。"
-        case .revealed: return "数字已展开，继续下一题。"
+        case .waiting: return "先完整听一句，确认后直接揭晓。"
+        case .revealed: return "答案已展开，继续下一题。"
         case .correct: return trainer.dataProvider.successText
         case .wrong: return trainer.dataProvider.gentleWrongText
         }
@@ -174,6 +184,7 @@ struct ListeningHomeHeader<LanguageSelection: View, ModeSelection: View>: View {
     let metrics: ListeningCanvasTheme.Metrics
     let currentLanguage: AppLanguage
     let appName: String
+    let appSubtitle: String
     let languageSelection: LanguageSelection
     let modeSelection: ModeSelection
 
@@ -192,8 +203,15 @@ struct ListeningHomeHeader<LanguageSelection: View, ModeSelection: View>: View {
                 .contentTransition(.opacity)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .id(currentLanguage)
-                .padding(.top, 22)
-                .padding(.bottom, 26)
+                .padding(.top, 12)
+                .padding(.bottom, 6)
+
+            Text(appSubtitle)
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundStyle(ListeningCanvasTheme.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.bottom, 18)
 
             HStack {
                 modeSelection
@@ -257,30 +275,35 @@ struct ListeningModeTrigger: View {
     let mode: GameMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 7) {
             Text("Catégorie")
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
                 .foregroundStyle(ListeningCanvasTheme.secondary)
                 .textCase(.uppercase)
-                .tracking(1.2)
+                .tracking(1.1)
 
             HStack(spacing: 8) {
                 Image(systemName: mode.icon)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .accessibilityHidden(true)
 
                 Text(mode.rawValue)
-                    .font(.system(size: 17, weight: .semibold, design: .serif))
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .lineLimit(1)
             }
             .foregroundStyle(ListeningCanvasTheme.title)
+
+            Text(mode.summary)
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundStyle(ListeningCanvasTheme.secondary)
+                .lineLimit(2)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
         .overlay(alignment: .bottomLeading) {
             Rectangle()
                 .fill(ListeningCanvasTheme.panelStroke.opacity(0.9))
-                .frame(width: 138, height: 1)
-                .offset(y: 10)
+                .frame(width: 198, height: 1)
+                .offset(y: 12)
         }
         .accessibilityLabel(mode.rawValue)
         .accessibilityHint("点击更改类别")

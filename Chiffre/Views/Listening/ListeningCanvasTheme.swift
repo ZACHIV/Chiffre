@@ -61,16 +61,19 @@ enum ListeningCanvasTheme {
         let size: CGSize
 
         var horizontalPadding: CGFloat { size.width > 430 ? 30 : 22 }
-        var topPadding: CGFloat { size.height < 760 ? 24 : 34 }
-        var bottomPadding: CGFloat { size.height < 760 ? 24 : 30 }
-        var sectionSpacing: CGFloat { size.height < 760 ? 22 : 34 }
-        var brandSize: CGFloat { size.width > 430 ? 64 : 58 }
-        var stageHeight: CGFloat { min(max(size.height * 0.31, 254), 322) }
+        var topPadding: CGFloat { size.height < 760 ? 16 : 24 }
+        var bottomPadding: CGFloat { size.height < 760 ? 18 : 24 }
+        var sectionSpacing: CGFloat { size.height < 760 ? 18 : 28 }
+        var brandSize: CGFloat { size.width > 430 ? 62 : 54 }
+        var stageHeight: CGFloat { min(max(size.height * 0.285, 236), 302) }
         var stageCornerRadius: CGFloat { size.height < 760 ? 30 : 36 }
         var panelCornerRadius: CGFloat { 26 }
-        var stagePadding: CGFloat { size.height < 760 ? 24 : 30 }
+        var stagePadding: CGFloat { size.height < 760 ? 22 : 28 }
         var actionRowSpacing: CGFloat { 14 }
-        var headerSpacing: CGFloat { size.height < 760 ? 18 : 22 }
+        var headerSpacing: CGFloat { size.height < 760 ? 14 : 18 }
         var modeControlHeight: CGFloat { size.height < 760 ? 42 : 48 }
+        var bottomDockSpacing: CGFloat { size.height < 760 ? 12 : 16 }
+        var contentBottomReserve: CGFloat { size.height < 760 ? 118 : 128 }
+        var stageContentLift: CGFloat { size.height < 760 ? 12 : 8 }
     }
 }
