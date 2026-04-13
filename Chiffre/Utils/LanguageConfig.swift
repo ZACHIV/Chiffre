@@ -163,6 +163,7 @@ protocol LanguageDataProvider {
     func formatTime(hour: Int, minute: Int) -> (display: String, speakable: String)
     func formatMonth(day: Int, month: String) -> (display: String, speakable: String)
     func sentenceTemplate(for mode: GameMode) -> String
+    func structureHint(for mode: GameMode) -> String
 
     var successText: String { get }
     var listenText: String { get }
@@ -180,6 +181,20 @@ protocol LanguageDataProvider {
     var showTextLabel: String { get }
     var hideTextLabel: String { get }
     var skipLabel: String { get }
+    var emptyInputPrompt: String { get }
+    var hintStartText: String { get }
+    var hintFocusReplayText: String { get }
+    var hintStructureText: String { get }
+    var hintScaffoldText: String { get }
+    var hintPartialRevealText: String { get }
+    var hintShowAnswerText: String { get }
+    var hintDoneText: String { get }
+    var hintReplayFullMessage: String { get }
+    var hintReplayFocusedMessage: String { get }
+    var hintScaffoldMessage: String { get }
+    var hintPartialRevealMessage: String { get }
+    var hintShowAnswerMessage: String { get }
+    var gentleWrongText: String { get }
 }
 
 // MARK: - 法语数据提供者
@@ -243,6 +258,19 @@ struct FrenchDataProvider: LanguageDataProvider {
         return templates[mode]?.randomElement() ?? "{X}"
     }
 
+    func structureHint(for mode: GameMode) -> String {
+        switch mode {
+        case .number:       return "先只抓数字本体，不要被整句干扰。"
+        case .phoneNumber:  return "这是一个电话号码，先确认开头和分组。"
+        case .price:        return "这是一个价格，先听整数位再听小数位。"
+        case .time:         return "这是一个 24 小时制时间，先抓小时。"
+        case .year:         return "这是一个年份，先抓前两位。"
+        case .month:        return "这是一个日期结构，先抓日再抓月份。"
+        case .trainNumber:  return "这是一个车次编号，先抓字母/类型再抓数字。"
+        case .flightNumber: return "这是一个航班号，先抓字母代码再抓数字。"
+        }
+    }
+
     var successText: String { "Correct !" }
     var listenText: String { "Écoutez..." }
     var nextText: String { "Suivant" }
@@ -258,6 +286,20 @@ struct FrenchDataProvider: LanguageDataProvider {
     var showTextLabel: String { "Afficher le texte" }
     var hideTextLabel: String { "Masquer le texte" }
     var skipLabel: String { "Passer" }
+    var emptyInputPrompt: String { "先听一遍，再尝试输入；不急。" }
+    var hintStartText: String { "给我一点提示" }
+    var hintFocusReplayText: String { "只听数字" }
+    var hintStructureText: String { "看结构" }
+    var hintScaffoldText: String { "给我支架" }
+    var hintPartialRevealText: String { "再给一点" }
+    var hintShowAnswerText: String { "显示答案" }
+    var hintDoneText: String { "已显示答案" }
+    var hintReplayFullMessage: String { "先完整再听一遍，抓整体节奏。" }
+    var hintReplayFocusedMessage: String { "这次只听关键数字片段。" }
+    var hintScaffoldMessage: String { "先看结构，不看完整答案。" }
+    var hintPartialRevealMessage: String { "再给你一半线索，离答案很近了。" }
+    var hintShowAnswerMessage: String { "已展示完整答案，下一题继续。" }
+    var gentleWrongText: String { "差一点。先抓结构，再听一次会更稳。" }
 }
 
 // MARK: - 西班牙语数据提供者
@@ -327,6 +369,19 @@ struct SpanishDataProvider: LanguageDataProvider {
         return templates[mode]?.randomElement() ?? "{X}"
     }
 
+    func structureHint(for mode: GameMode) -> String {
+        switch mode {
+        case .number:       return "先只抓数字本体，不要被整句干扰。"
+        case .phoneNumber:  return "这是一个电话号码，先确认开头和分组。"
+        case .price:        return "这是一个价格，先听整数位再听小数位。"
+        case .time:         return "这是一个 24 小时制时间，先抓小时。"
+        case .year:         return "这是一个年份，先抓前两位。"
+        case .month:        return "这是一个日期结构，先抓日再抓月份。"
+        case .trainNumber:  return "这是一个车次编号，先抓字母/类型再抓数字。"
+        case .flightNumber: return "这是一个航班号，先抓字母代码再抓数字。"
+        }
+    }
+
     var successText: String { "¡Correcto!" }
     var listenText: String { "Escucha..." }
     var nextText: String { "Siguiente" }
@@ -342,4 +397,18 @@ struct SpanishDataProvider: LanguageDataProvider {
     var showTextLabel: String { "Mostrar texto" }
     var hideTextLabel: String { "Ocultar texto" }
     var skipLabel: String { "Saltar" }
+    var emptyInputPrompt: String { "先听一遍，再尝试输入；不急。" }
+    var hintStartText: String { "给我一点提示" }
+    var hintFocusReplayText: String { "只听数字" }
+    var hintStructureText: String { "看结构" }
+    var hintScaffoldText: String { "给我支架" }
+    var hintPartialRevealText: String { "再给一点" }
+    var hintShowAnswerText: String { "显示答案" }
+    var hintDoneText: String { "已显示答案" }
+    var hintReplayFullMessage: String { "先完整再听一遍，抓整体节奏。" }
+    var hintReplayFocusedMessage: String { "这次只听关键数字片段。" }
+    var hintScaffoldMessage: String { "先看结构，不看完整答案。" }
+    var hintPartialRevealMessage: String { "再给你一半线索，离答案很近了。" }
+    var hintShowAnswerMessage: String { "已展示完整答案，下一题继续。" }
+    var gentleWrongText: String { "差一点。先抓结构，再听一次会更稳。" }
 }
