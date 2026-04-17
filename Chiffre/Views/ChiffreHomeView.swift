@@ -2,8 +2,11 @@ import SwiftUI
 
 struct ChiffreHomeView: View {
     @ObservedObject var trainer: NumberTrainer
+    @StateObject private var dailySignStore = DailyNumberSignStore()
     @ObservedObject private var lm = LanguageVoiceManager.shared
+    @Environment(\.scenePhase) private var scenePhase
     @State private var languageAnimationToken = 0
+    @State private var showDailySign = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -23,6 +26,13 @@ struct ChiffreHomeView: View {
                             modeSelection: modeTrigger
                         )
                         .padding(.bottom, metrics.sectionSpacing)
+
+                        if let entry = dailySignStore.todaysEntry, lm.currentLanguage == .french {
+                            DailyNumberSignTeaserCard(entry: entry) {
+                                showDailySign = true
+                            }
+                            .padding(.bottom, metrics.sectionSpacing)
+                        }
 
                         ListeningStageView(
                             answerState: trainer.answerState,
@@ -66,6 +76,19 @@ struct ChiffreHomeView: View {
                 .padding(.top, metrics.bottomDockSpacing)
                 .padding(.bottom, metrics.bottomDockSpacing)
                 .background(Color.clear)
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                dailySignStore.refresh()
+            }
+        }
+        .sheet(isPresented: $showDailySign) {
+            if let entry = dailySignStore.todaysEntry {
+                DailyNumberSignSheet(entry: entry)
+                    .presentationDetents([.fraction(0.72), .large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(32)
             }
         }
     }
