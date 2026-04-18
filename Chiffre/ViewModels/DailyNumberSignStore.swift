@@ -1,12 +1,11 @@
 import Foundation
+import Combine
 
 struct DailyNumberSignEntry: Codable, Identifiable, Equatable {
     let day: Int
     let title: String
     let subtitle: String
-    let dailyCopy: String
     let numberStory: String
-    let visualMotif: String
 
     var id: Int { day }
 
@@ -14,9 +13,7 @@ struct DailyNumberSignEntry: Codable, Identifiable, Equatable {
         case day
         case title
         case subtitle
-        case dailyCopy = "daily_copy"
         case numberStory = "number_story"
-        case visualMotif = "visual_motif"
     }
 }
 

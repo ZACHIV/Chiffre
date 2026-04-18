@@ -6,45 +6,70 @@ struct DailyNumberSignTeaserCard: View {
 
     var body: some View {
         Button(action: action) {
-            ImpressionistGlassCard(cornerRadius: 28) {
-                VStack(alignment: .leading, spacing: 14) {
-                    HStack(alignment: .top, spacing: 12) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Aujourd'hui \(entry.day)")
-                                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                .foregroundStyle(ListeningCanvasTheme.sunrise)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .center, spacing: 10) {
+                    Text("每日数字解读")
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(ListeningCanvasTheme.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(ListeningCanvasTheme.canvasFill.opacity(0.42))
+                        .clipShape(Capsule())
 
-                            Text(entry.title)
-                                .font(SurrealTheme.Typography.header(24))
-                                .foregroundStyle(ListeningCanvasTheme.title)
-                                .multilineTextAlignment(.leading)
-                        }
+                    Spacer(minLength: 8)
 
-                        Spacer(minLength: 12)
-
-                        Image(systemName: "calendar.badge.sparkles")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(ListeningCanvasTheme.water)
-                            .padding(10)
-                            .background(Color.white.opacity(0.22))
-                            .clipShape(Circle())
-                    }
-
-                    Text(entry.subtitle)
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(ListeningCanvasTheme.body)
-                        .multilineTextAlignment(.leading)
-                        .lineSpacing(2)
-
-                    HStack(spacing: 8) {
-                        Image(systemName: "sparkles")
-                        Text("点开读今天这则法式无用吐槽")
+                    HStack(spacing: 4) {
+                        Text("\(entry.day)")
+                        Image(systemName: "chevron.right")
                     }
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(ListeningCanvasTheme.secondary)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(18)
+
+                Text(entry.title)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(ListeningCanvasTheme.title.opacity(0.88))
+                    .multilineTextAlignment(.leading)
+
+                Text(entry.subtitle)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(ListeningCanvasTheme.body.opacity(0.82))
+                    .multilineTextAlignment(.leading)
+                    .lineSpacing(2)
+                    .lineLimit(2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(ListeningCanvasTheme.canvasFill.opacity(0.36))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(ListeningCanvasTheme.panelStroke.opacity(0.55), lineWidth: 1)
+            )
+            .shadow(color: SurrealTheme.colors.lavenderMist.opacity(0.08), radius: 8, y: 4)
+            .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .accessibilityLabel("每日数字解读，\(entry.day) 号，\(entry.title)")
+            .accessibilityHint("点开查看今天的数字逸闻")
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.bottom, 8)
+            .opacity(0.9)
+            .overlay(alignment: .topLeading) {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                ListeningCanvasTheme.water.opacity(0.2),
+                                Color.clear
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(height: 1)
+                    .offset(y: -1)
             }
         }
         .buttonStyle(.plain)
@@ -55,9 +80,7 @@ struct DailyNumberSignSheet: View {
     let entry: DailyNumberSignEntry
     @Environment(\.dismiss) private var dismiss
     @State private var revealHeader = false
-    @State private var revealCopy = false
     @State private var revealStory = false
-    @State private var revealMotif = false
     @State private var hasAnimatedIn = false
 
     var body: some View {
@@ -75,23 +98,12 @@ struct DailyNumberSignSheet: View {
                             .modifier(DailySignEntrance(visible: revealHeader, offset: 18, scale: 0.98))
 
                         copyCard(
-                            eyebrow: "今日废话",
-                            icon: "text.quote",
-                            text: entry.dailyCopy,
-                            accent: ListeningCanvasTheme.sunrise.opacity(0.9)
-                        )
-                        .modifier(DailySignEntrance(visible: revealCopy, offset: 22))
-
-                        copyCard(
                             eyebrow: "数字逸闻",
                             icon: "books.vertical.fill",
                             text: entry.numberStory,
                             accent: ListeningCanvasTheme.water.opacity(0.92)
                         )
-                        .modifier(DailySignEntrance(visible: revealStory, offset: 24))
-
-                        motifCard
-                            .modifier(DailySignEntrance(visible: revealMotif, offset: 20))
+                        .modifier(DailySignEntrance(visible: revealStory, offset: 22))
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 14)
@@ -115,14 +127,8 @@ struct DailyNumberSignSheet: View {
             withAnimation(.spring(response: 0.62, dampingFraction: 0.86)) {
                 revealHeader = true
             }
-            withAnimation(.spring(response: 0.58, dampingFraction: 0.88).delay(0.08)) {
-                revealCopy = true
-            }
-            withAnimation(.spring(response: 0.58, dampingFraction: 0.9).delay(0.16)) {
+            withAnimation(.spring(response: 0.58, dampingFraction: 0.9).delay(0.08)) {
                 revealStory = true
-            }
-            withAnimation(.easeOut(duration: 0.42).delay(0.24)) {
-                revealMotif = true
             }
         }
     }
@@ -215,22 +221,6 @@ struct DailyNumberSignSheet: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(18)
-        }
-    }
-
-    private var motifCard: some View {
-        DailySignGlassCard(cornerRadius: 24, accent: ListeningCanvasTheme.leaf, shimmerStrength: 0.38) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("视觉线索")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundStyle(ListeningCanvasTheme.secondary)
-
-                Text(entry.visualMotif)
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundStyle(ListeningCanvasTheme.title)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
         }
     }
 }

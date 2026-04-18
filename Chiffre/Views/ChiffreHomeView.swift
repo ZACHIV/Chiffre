@@ -27,13 +27,6 @@ struct ChiffreHomeView: View {
                         )
                         .padding(.bottom, metrics.sectionSpacing)
 
-                        if let entry = dailySignStore.todaysEntry, lm.currentLanguage == .french {
-                            DailyNumberSignTeaserCard(entry: entry) {
-                                showDailySign = true
-                            }
-                            .padding(.bottom, metrics.sectionSpacing)
-                        }
-
                         ListeningStageView(
                             answerState: trainer.answerState,
                             currentDisplay: trainer.currentDisplay,
@@ -55,6 +48,13 @@ struct ChiffreHomeView: View {
                                 sentenceAccessibilityLabel: trainer.sentenceContext
                             )
                             .padding(.bottom, 20)
+                        }
+
+                        if let entry = dailySignStore.todaysEntry, lm.currentLanguage == .french {
+                            DailyNumberSignTeaserCard(entry: entry) {
+                                showDailySign = true
+                            }
+                            .padding(.top, metrics.sectionSpacing * 0.8)
                         }
 
                         Spacer(minLength: 0)
