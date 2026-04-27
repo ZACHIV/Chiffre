@@ -6,7 +6,7 @@ struct SpeakingPracticeView: View {
     @State private var borderRotation: Double = 0  // 边框动画
 
     private var dp: LanguageDataProvider {
-        lm.currentLanguage == .french ? FrenchDataProvider() : SpanishDataProvider()
+        LanguagePack(language: lm.currentLanguage).provider
     }
     
     var body: some View {

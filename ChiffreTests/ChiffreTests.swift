@@ -72,4 +72,54 @@ struct ChiffreTests {
         #expect(store.todaysEntry?.title == "十五号月圆")
     }
 
+    @Test func answerNormalizerMatchesCommonListeningFormats() {
+        let normalizer = AnswerNormalizer()
+
+        #expect(normalizer.matches("14h30", target: "14:30"))
+        #expect(normalizer.matches("06 12 34 56 78", target: "0612345678"))
+        #expect(normalizer.matches("le 15 de enero", target: "15 enero"))
+        #expect(normalizer.matches("12,50 €", target: "12.50"))
+    }
+
+    @Test func hintEngineRevealsDigitsProgressively() throws {
+        let engine = HintEngine()
+
+        let firstHint = try #require(engine.nextDigitHint(display: "AF 2048", revealedDigits: 0))
+        #expect(firstHint.stage == .partialReveal)
+        #expect(firstHint.visual == "AF 2•••")
+        #expect(firstHint.revealedDigits == 1)
+
+        let finalHint = try #require(engine.nextDigitHint(display: "42", revealedDigits: 1))
+        #expect(finalHint.stage == .fullReveal)
+        #expect(finalHint.visual == "42")
+    }
+
+    @Test func exerciseGeneratorProducesConfiguredNumberExercise() {
+        let generator = RandomExerciseGenerator()
+        let settings = TrainingSettings(mode: .number, maxRange: 9, playbackRate: 0.56)
+        let exercise = generator.generate(settings: settings, provider: FrenchDataProvider())
+
+        #expect(Int(exercise.display) != nil)
+        #expect((0...9).contains(Int(exercise.display) ?? -1))
+        #expect(exercise.speakable == exercise.display)
+        #expect(exercise.sentence.contains(exercise.display))
+    }
+
+    @Test func voiceSettingsStorePersistsPreferences() {
+        let suiteName = "ChiffreTests.VoiceSettingsStore"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+
+        let store = VoiceSettingsStore(userDefaults: defaults)
+        store.save(language: .spanish)
+        store.save(frenchVoice: .thomas)
+        store.save(spanishVoice: .diego)
+
+        #expect(store.loadLanguage() == .spanish)
+        #expect(store.loadFrenchVoice() == .thomas)
+        #expect(store.loadSpanishVoice() == .diego)
+
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
 }
