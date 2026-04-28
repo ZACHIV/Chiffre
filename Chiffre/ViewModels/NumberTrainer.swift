@@ -10,9 +10,7 @@ final class NumberTrainer: ObservableObject {
     @Published var hintVisual: String = ""
     @Published var revealedHintDigits: Int = 0
 
-    @Published var sessionCorrect: Int = 0
-    @Published var sessionTotal: Int = 0
-    @Published var currentStreak: Int = 0
+    @AppStorage("lifetimePracticeCount") var lifetimePracticeCount: Int = 0
 
     @AppStorage("gameMode") var mode: GameMode = .number
     @AppStorage("maxRange") var maxRange: Int = 100
@@ -162,7 +160,11 @@ final class NumberTrainer: ObservableObject {
             answerState = .revealed
         }
 
-        let generator = UIImpactFeedbackGenerator(style: .soft)
-        generator.impactOccurred()
+        lifetimePracticeCount += 1
+
+        if UserDefaults.standard.object(forKey: "hapticFeedbackEnabled") as? Bool ?? true {
+            let generator = UIImpactFeedbackGenerator(style: .soft)
+            generator.impactOccurred()
+        }
     }
 }

@@ -19,17 +19,23 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    SettingsSummaryRow(
-                        title: "语言",
-                        value: lm.currentLanguage.displayName,
-                        detail: "在 Écouter 页左上角直接切换"
-                    )
+                    NavigationLink {
+                        LanguageSettingsView()
+                    } label: {
+                        SettingsNavigationRow(
+                            title: "语言",
+                            value: lm.currentLanguage.displayName
+                        )
+                    }
 
-                    SettingsSummaryRow(
-                        title: "类别",
-                        value: trainer.mode.rawValue,
-                        detail: trainer.mode.summary
-                    )
+                    NavigationLink {
+                        ModeSettingsView(trainer: trainer)
+                    } label: {
+                        SettingsNavigationRow(
+                            title: "类别",
+                            value: trainer.mode.rawValue
+                        )
+                    }
 
                     if trainer.mode.isRangeConfigurable {
                         NavigationLink {
@@ -43,8 +49,6 @@ struct SettingsView: View {
                     }
                 } header: {
                     Text("Practice")
-                } footer: {
-                    Text("语言和类别保持在首页直改，设置页只保留需要沉下来的训练参数。")
                 }
 
                 Section {
@@ -80,8 +84,32 @@ struct SettingsView: View {
                     }
                 } header: {
                     Text("Interface")
-                } footer: {
-                    Text("保持更轻的视觉层次，把复杂设置放到二级页面里。")
+                }
+
+                Section {
+                    NavigationLink {
+                        DataSettingsView(trainer: trainer)
+                    } label: {
+                        SettingsNavigationRow(
+                            title: "数据",
+                            value: "\(trainer.lifetimePracticeCount) 次"
+                        )
+                    }
+                } header: {
+                    Text("Data")
+                }
+
+                Section {
+                    NavigationLink {
+                        AboutSettingsView()
+                    } label: {
+                        SettingsNavigationRow(
+                            title: "关于",
+                            value: "Chiffre"
+                        )
+                    }
+                } header: {
+                    Text("About")
                 }
             }
             .listStyle(.insetGrouped)
