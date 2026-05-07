@@ -1,11 +1,8 @@
 import SwiftUI
 
 struct ImpressionistGlassCard<Content: View>: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage("listeningAmbientMotionEnabled") private var ambientMotionEnabled = true
     let cornerRadius: CGFloat
     @ViewBuilder let content: Content
-    @State private var borderRotation: Double = 0
 
     var body: some View {
         ZStack {
@@ -19,29 +16,26 @@ struct ImpressionistGlassCard<Content: View>: View {
                 .shadow(color: Color.white.opacity(0.5), radius: 8, x: -4, y: -4)
                 .overlay(
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(
-                            AngularGradient(
+                        .stroke(ListeningCanvasTheme.canvasStroke.opacity(0.45), lineWidth: 1)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(
+                            RadialGradient(
                                 colors: [
-                                    ListeningCanvasTheme.water.opacity(0.2),
-                                    ListeningCanvasTheme.dawn.opacity(0.95),
-                                    Color.white.opacity(0.85),
-                                    ListeningCanvasTheme.mist.opacity(0.4),
-                                    ListeningCanvasTheme.water.opacity(0.2)
+                                    Color.white.opacity(0.28),
+                                    ListeningCanvasTheme.dawn.opacity(0.10),
+                                    .clear
                                 ],
-                                center: .center,
-                                angle: .degrees(borderRotation)
-                            ),
-                            lineWidth: 1.4
+                                center: UnitPoint(x: 0.16, y: 0.10),
+                                startRadius: 6,
+                                endRadius: cornerRadius * 1.5
+                            )
                         )
+                        .blendMode(.plusLighter)
                 )
 
             content
-        }
-        .onAppear {
-            guard ambientMotionEnabled, !reduceMotion else { return }
-            withAnimation(.linear(duration: 8).repeatForever(autoreverses: false)) {
-                borderRotation = 360
-            }
         }
     }
 }

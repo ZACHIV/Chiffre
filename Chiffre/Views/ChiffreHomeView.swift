@@ -323,10 +323,12 @@ struct ListeningModeTrigger: View {
         }
         .padding(.vertical, 8)
         .overlay(alignment: .bottomLeading) {
-            Rectangle()
-                .fill(ListeningCanvasTheme.panelStroke.opacity(0.9))
-                .frame(width: 198, height: 1)
-                .offset(y: 12)
+            GeometryReader { geo in
+                Rectangle()
+                    .fill(ListeningCanvasTheme.panelStroke.opacity(0.9))
+                    .frame(width: geo.size.width * 0.72, height: 1)
+                    .offset(y: 12)
+            }
         }
         .accessibilityLabel(mode.rawValue)
         .accessibilityHint("点击更改类别")
